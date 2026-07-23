@@ -1,0 +1,77 @@
+version: '3.8'
+
+# =============================================================================
+# DOCKER COMPOSE — Environnement de développement local
+#
+# Services :
+#   mysql  → Base de données relationnelle MySQL 8.0
+#   redis  → Cache en mémoire + blacklist JWT
+#
+# Démarrage : docker-compose up -d
+# Arrêt     : docker-compose down
+# Reset DB  : docker-compose down -v  (supprime les volumes)
+# =============================================================================
+
+services:
+  # Note : docker-compose lit automatiquement le fichier .env situé à la
+  # racine du projet pour résoudre les ${VARIABLES} utilisées ci-dessous
+  # (MYSQL_ROOT_PASSWORD, MYSQL_DATABASE, ...). Aucune directive env_file
+  # n'est nécessaire pour cela.
+
+  adminer:
+    container_name: adminer-server
+    image: adminer:4.8.1 # Use explicit version tag for security
+    restart: always
+    ports:
+      - '8081:8080'
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+
+  # ---------------------------------------------------------------------------
+  # MYSQL 8.0
+  # ---------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: auth-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MYSQL_USER}", "-p${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+
+  # ---------------------------------------------------------------------------
+  # REDIS 7
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: auth-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local

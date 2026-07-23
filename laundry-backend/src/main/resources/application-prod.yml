@@ -1,0 +1,49 @@
+# =============================================================================
+# application-prod.yml — Profil PRODUCTION
+#
+# Activé avec la variable d'environnement :
+#   SPRING_PROFILES_ACTIVE=prod
+#
+# TOUTES les valeurs sensibles doivent venir de variables d'environnement.
+# Ce fichier ne contient AUCUNE credential en dur.
+# =============================================================================
+
+spring:
+  jpa:
+    hibernate:
+      # PRODUCTION : validate uniquement — Hibernate vérifie que le schéma
+      # correspond aux entités mais ne le modifie jamais.
+      # Les migrations de schéma sont gérées via Flyway (à ajouter).
+      ddl-auto: validate
+    show-sql: false              # Jamais de SQL dans les logs de production
+    properties:
+      hibernate:
+        format_sql: false
+
+  datasource:
+    hikari:
+      maximum-pool-size: 20      # Plus de connexions simultanées en prod
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000      # 30 minutes — évite les connexions fantômes
+
+server:
+  # HTTPS obligatoire en production (géré par un reverse proxy nginx/Traefik)
+  # Le serveur Spring Boot écoute sur HTTP et nginx termine le TLS
+  port: ${SERVER_PORT}
+  tomcat:
+    max-threads: 200             # Threads Tomcat pour gérer la concurrence
+
+# Logging minimal en production
+logging:
+  level:
+    root:             warn
+    com.template.auth: info      # Nos logs métier uniquement
+    org.springframework: warn
+  file:
+    name: /var/log/auth-backend/app.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30            # Garde 30 jours de logs
