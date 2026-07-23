@@ -1,1 +1,12 @@
-laundry-backend/.env
+.env
+# Ignore any environment files anywhere in the repository
+# - plain .env files
+# - .env.* variants (e.g. .env.local, .env.production)
+# - files named .env in any subdirectory
+.env.*
+**/.env
+**/.env.*
+
+## Keep example env files (useful templates) tracked in the repo
+!.env.example
+!**/.env.example
