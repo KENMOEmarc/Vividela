@@ -1,0 +1,122 @@
+version: '3.9'
+
+# =============================================================================
+# docker-compose.yml — Infrastructure de développement locale
+#
+# Lance PostgreSQL + Redis en un seul conteneur Docker.
+# L'application Spring Boot tourne directement sur la machine hôte (pas dans Docker),
+# ce qui permet un rechargement rapide avec spring-boot:run ou DevTools.
+#
+# DÉMARRAGE :
+#   docker compose up -d          → démarrage en arrière-plan
+#   docker compose down           → arrêt et suppression des conteneurs
+#   docker compose down -v        → arrêt + suppression des volumes (données perdues)
+#   docker compose logs -f        → affichage des logs en temps réel
+#
+# CONNEXION DEPUIS L'HÔTE :
+#   PostgreSQL : jdbc:postgresql://localhost:5432/auth_db
+#   Redis      : localhost:6379
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # POSTGRESQL — Base de données relationnelle
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine          # Alpine = image légère (~80 MB)
+    container_name: auth_postgres
+    restart: unless-stopped            # Redémarre automatiquement sauf si arrêt manuel
+
+    environment:
+      POSTGRES_DB:       auth_db       # Base créée automatiquement au premier démarrage
+      POSTGRES_USER:     auth_user
+      POSTGRES_PASSWORD: auth_password
+      # Locale française pour les collations
+      POSTGRES_INITDB_ARGS: "--locale=fr_FR.UTF-8 --encoding=UTF8"
+
+    ports:
+      - "5432:5432"                    # hôte:conteneur
+
+    volumes:
+      # Volume nommé Docker → données persistées même après docker compose down
+      - postgres_data:/var/lib/postgresql/data
+      # Script SQL exécuté à la création de la base (premier démarrage uniquement)
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth_user -d auth_db"]
+      interval: 10s
+      timeout:  5s
+      retries:  5
+      start_period: 20s
+
+    networks:
+      - auth_network
+
+  # ---------------------------------------------------------------------------
+  # REDIS — Cache en mémoire et blacklist JWT
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: auth_redis
+    restart: unless-stopped
+
+    # Commande Redis avec :
+    #   --appendonly yes → persistance AOF (survive aux redémarrages)
+    #   --maxmemory      → limite mémoire
+    #   --maxmemory-policy allkeys-lru → éviction LRU si mémoire pleine
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data:/data               # Persistance des données AOF
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout:  5s
+      retries:  5
+
+    networks:
+      - auth_network
+
+  # ---------------------------------------------------------------------------
+  # REDIS COMMANDER — Interface web pour inspecter Redis (optionnel)
+  # Accessible sur http://localhost:8081
+  # Décommenter pour activer en développement.
+  # ---------------------------------------------------------------------------
+  # redis-commander:
+  #   image: rediscommander/redis-commander:latest
+  #   container_name: auth_redis_commander
+  #   environment:
+  #     REDIS_HOSTS: local:redis:6379
+  #   ports:
+  #     - "8081:8081"
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #   networks:
+  #     - auth_network
+
+# ---------------------------------------------------------------------------
+# VOLUMES — Stockage persistant géré par Docker
+# ---------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ---------------------------------------------------------------------------
+# RÉSEAUX — Isolation réseau entre les services
+# ---------------------------------------------------------------------------
+networks:
+  auth_network:
+    driver: bridge

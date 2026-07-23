@@ -1,0 +1,49 @@
+package com.template.auth.model.mapper;
+
+import com.template.auth.model.dto.AuthResponse;
+import com.template.auth.model.dto.UserDto;
+import com.template.auth.model.entity.User;
+import com.template.auth.model.enums.RoleType;
+
+/**
+ * Mapper centralisant la conversion User (entity) ↔ UserDto / AuthResponse.UserInfo.
+ */
+public final class UserMapper {
+
+    private UserMapper() {
+        // Classe utilitaire : pas d'instanciation
+    }
+
+    public static UserDto toDto(User user) {
+        if (user == null) {
+            return null;
+        }
+        return UserDto.builder()
+                .id(user.getId())
+                .userName(user.getUserName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .role(user.getRole() != null ? RoleType.valueOf(user.getRole().toUpperCase()) : null)
+                .enabled(Boolean.TRUE.equals(user.getIsActive()))
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
+    }
+
+    public static AuthResponse.UserInfo toUserInfo(User user) {
+        if (user == null) {
+            return null;
+        }
+        return AuthResponse.UserInfo.builder()
+                .id(user.getId())
+                .userName(user.getUserName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .role(user.getRole() != null ? String.valueOf(user.getRole()) : null)
+                .build();
+    }
+}
