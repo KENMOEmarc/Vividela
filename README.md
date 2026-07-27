@@ -9,7 +9,7 @@ Template complet d'authentification avec **Spring Boot** (backend) et **React.js
 | Backend | Spring Boot | 3.2.5 | Serveur REST, logique métier |
 | Sécurité | Spring Security + JWT | — | Authentification stateless |
 | ORM | Spring Data JPA / Hibernate | — | Mapping objet-relationnel |
-| Base de données | PostgreSQL | 15+ | Persistance des utilisateurs |
+| Base de données | MYSQL | 8+ | Persistance des utilisateurs |
 | Cache / Session | Redis | 7+ | Blacklist JWT, cache applicatif |
 | Frontend | React.js | 18.3 | Interface utilisateur SPA |
 | Routage | React Router | v6 | Navigation côté client |
