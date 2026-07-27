@@ -62,12 +62,12 @@ Templates/
 - **Java 21+** — `java --version`
 - **Maven 3.9+** — `mvn --version`
 - **Node.js 20+** — `node --version`
-- **PostgreSQL 15+** — Serveur démarré
+- **MYSQL 8+** — Serveur démarré
 - **Redis 7+** — Serveur démarré
 
 ## Démarrage rapide
 
-### 1. Base de données PostgreSQL
+### 1. Base de données MYSQL
 
 ```sql
 CREATE DATABASE auth_db;
