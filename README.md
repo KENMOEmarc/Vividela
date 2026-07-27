@@ -163,3 +163,30 @@ npm run dev
 - **HTTPS obligatoire** en production (le token voyage dans le header)
 - Validation des données en entrée (Jakarta Validation côté backend + validators.js côté frontend)
 - Messages d'erreur génériques (anti-énumération de comptes)
+
+
+## Captures d'écran
+
+#### Dashboards
+
+<img width="1920" height="1080" alt="client-dashboard" src="https://github.com/user-attachments/assets/dceef7ec-e676-4610-a1aa-c4a96eb120ae" />
+
+<img width="1920" height="1080" alt="Dashboard-manager" src="https://github.com/user-attachments/assets/76c96e14-5080-4ee8-a8a8-c57945ee3fe8" />
+
+<img width="1920" height="1080" alt="employe" src="https://github.com/user-attachments/assets/466d07d2-5203-406b-9978-f8c01a119d45" />
+
+<img width="1920" height="1080" alt="employe-com" src="https://github.com/user-attachments/assets/c21760cb-8cda-4773-8752-850d7ef83225" />
+
+#### Services and prices
+
+<img width="1920" height="1080" alt="services-prix" src="https://github.com/user-attachments/assets/54fb96da-e548-4439-9e39-fc1fef259802" />
+
+<img width="1920" height="1080" alt="services" src="https://github.com/user-attachments/assets/f9178dc1-aaf1-4e15-ab1d-a02390201dab" />
+
+
+
+#### stock
+
+<img width="1920" height="1080" alt="stock" src="https://github.com/user-attachments/assets/3fbb79c1-d3f3-4f7d-b591-a5ea8d9f03f1" />
+
+<img width="1920" height="1080" alt="Screenshot from 2026-07-16 10-48-25" src="https://github.com/user-attachments/assets/f28b8681-1d99-4eef-9e20-3b61cb6d95d5" />
