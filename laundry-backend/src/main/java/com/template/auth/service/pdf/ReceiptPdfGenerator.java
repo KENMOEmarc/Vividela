@@ -1,12 +1,6 @@
 package com.template.auth.service.pdf;
 
-import com.lowagie.text.Document;
-import com.lowagie.text.DocumentException;
-import com.lowagie.text.Element;
-import com.lowagie.text.Font;
-import com.lowagie.text.FontFactory;
-import com.lowagie.text.Paragraph;
-import com.lowagie.text.Rectangle;
+import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
@@ -27,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,11 +38,14 @@ import java.util.Map;
  */
 public final class ReceiptPdfGenerator {
 
-    // Largeur façon ticket de caisse (~80mm) ; hauteur généreuse, le contenu
-    // ne remplit que ce dont il a besoin.
-    private static final Rectangle PAGE_SIZE = new Rectangle(226f, 750f);
+    private static final Rectangle PAGE_SIZE = PageSize.A5;
 
-    private static final DateTimeFormatter DATE_FMT     = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    // Palette de couleurs utilisée pour le PDF
+    private static final Color PRIMARY       = new Color(14, 90, 138);    // principal bleu (en-tête, bandeaux)
+    private static final Color PRIMARY_LIGHT = new Color(234, 244, 251);  // fond bleu clair (bandeau, zébrage)
+    private static final Color BORDER_BLUE   = new Color(170, 197, 214);  // bordures des tableaux
+    private static final Color TEXT_DARK     = new Color(31, 41, 55);    // texte principal
+
     private static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm");
 
     private ReceiptPdfGenerator() {
@@ -66,7 +64,7 @@ public final class ReceiptPdfGenerator {
      * @param issuedBy  utilisateur actuellement authentifié qui a demandé la
      *                  génération de ce reçu (affiché comme "Émis par"). Peut
      *                  être {@code null} si l'information n'est pas disponible.
-     * @param netAmountDue montant net réellement dû (remise ET points de
+     * @param netAmountDue montant net réellement dû (remise et points de
      *                  fidélité utilisés déjà déduits), calculé par
      *                  TicketServiceImpl avec la même formule que
      *                  OrderDto.netAmountDue — garantit que l'API et ce PDF
@@ -74,178 +72,182 @@ public final class ReceiptPdfGenerator {
      *                  revue de code, règle manquante n°13.
      */
     public static byte[] generate(Order order, List<Article> articles, List<ArticleService> services,
-                                   String reference, ShopProperties shop, User issuedBy, BigDecimal netAmountDue) {
+                                  String reference, ShopProperties shop, User issuedBy, BigDecimal netAmountDue) {
         try {
-            Document document = new Document(PAGE_SIZE, 14f, 14f, 12f, 12f);
+            Document document = new Document(PAGE_SIZE, 20f, 20f, 16f, 16f);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             PdfWriter.getInstance(document, out);
             document.open();
 
-            Font shopFont      = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13, Color.BLACK);
-            Font contactFont   = FontFactory.getFont(FontFactory.HELVETICA, 7.5f, Color.DARK_GRAY);
-            Font labelFont     = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8.5f, Color.BLACK);
-            Font refFont       = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9.5f, new Color(15, 118, 110));
-            Font normalFont    = FontFactory.getFont(FontFactory.HELVETICA, 8.5f, Color.BLACK);
-            Font articleFont   = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8.5f, new Color(15, 118, 110));
-            Font serviceFont   = FontFactory.getFont(FontFactory.HELVETICA, 8f, Color.BLACK);
-            Font subtotalFont  = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 7.5f, Color.DARK_GRAY);
-            Font totalFont     = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10.5f, Color.BLACK);
-            Font smallFont     = FontFactory.getFont(FontFactory.HELVETICA, 7.5f, Color.GRAY);
-            Font statusFont;
-
-            // ── En-tête établissement ───────────────────────────────────
-            addCentered(document, shop.getName(), shopFont, 0f, 1f);
-            addCentered(document, shop.getPhone(), contactFont, 0f, 0f);
-            addCentered(document, shop.getEmail(), contactFont, 0f, 4f);
-
-            document.add(dashedSeparator());
-
-            addCentered(document, "REÇU DE VENTE", labelFont, 4f, 1f);
-            addCentered(document, "N° " + reference, refFont, 0f, 6f);
-
-            // ── Informations commande ───────────────────────────────────
-            User client = order.getClientUser();
-            String clientName = client != null
-                    ? (safe(client.getFirstName()) + " " + safe(client.getLastName())).trim()
-                    : "-";
-
-            addInfoLine(document, "Client", clientName, labelFont, normalFont);
-            addInfoLine(document, "Commande", "N°" + order.getId(), labelFont, normalFont);
-            addInfoLine(document, "Date", DATETIME_FMT.format(Instant.now().atZone(ZoneId.systemDefault())), labelFont, normalFont);
-            if (order.getCreatedBy() != null) {
-                String cashier = (safe(order.getCreatedBy().getFirstName()) + " " + safe(order.getCreatedBy().getLastName())).trim();
-                if (!cashier.isEmpty()) {
-                    addInfoLine(document, "Caissier", cashier, labelFont, normalFont);
-                }
-            }
-            if (issuedBy != null) {
-                String issuer = (safe(issuedBy.getFirstName()) + " " + safe(issuedBy.getLastName())).trim();
-                if (!issuer.isEmpty()) {
-                    addInfoLine(document, "Émis par", issuer, labelFont, normalFont);
-                }
-            }
-
-            Paragraph spacer = new Paragraph(" ", smallFont);
-            spacer.setSpacingAfter(2);
-            document.add(spacer);
-            document.add(dashedSeparator());
-
-            // ── Détail par article : chaque vêtement avec les services
-            //    qui lui sont appliqués et leur prix ────────────────────────
-            Map<Long, List<ArticleService>> servicesByArticle = new LinkedHashMap<>();
-            if (services != null) {
-                for (ArticleService service : services) {
-                    Long articleId = service.getArticle() != null ? service.getArticle().getId() : null;
-                    servicesByArticle.computeIfAbsent(articleId, k -> new java.util.ArrayList<>()).add(service);
-                }
-            }
-
-            BigDecimal computedTotal = BigDecimal.ZERO;
-            int articleIndex = 0;
-            for (Article article : articles) {
-                articleIndex++;
-                List<ArticleService> articleServices = servicesByArticle.get(article.getId());
-
-                Paragraph articleTitle = new Paragraph(articleIndex + ". " + formatArticleLabel(article), articleFont);
-                articleTitle.setSpacingBefore(articleIndex == 1 ? 0f : 5f);
-                articleTitle.setSpacingAfter(2f);
-                document.add(articleTitle);
-
-                PdfPTable serviceTable = new PdfPTable(2);
-                serviceTable.setWidthPercentage(100);
-                serviceTable.setWidths(new float[]{2.6f, 1.4f});
-                serviceTable.setSpacingAfter(1f);
-
-                BigDecimal articleTotal = BigDecimal.ZERO;
-                if (articleServices != null && !articleServices.isEmpty()) {
-                    for (ArticleService as : articleServices) {
-                        BigDecimal price = as.getAppliedPrice() != null ? as.getAppliedPrice() : BigDecimal.ZERO;
-                        articleTotal = articleTotal.add(price);
-                        addServiceRow(serviceTable, "  • " + formatServiceType(as.getService()), price.toPlainString() + " F", serviceFont);
-                    }
-                } else {
-                    addServiceRow(serviceTable, "  • Aucun service enregistré", "-", serviceFont);
-                }
-                document.add(serviceTable);
-
-                computedTotal = computedTotal.add(articleTotal);
-
-                Paragraph articleSubtotal = new Paragraph("Sous-total : " + articleTotal.toPlainString() + " F", subtotalFont);
-                articleSubtotal.setAlignment(Element.ALIGN_RIGHT);
-                articleSubtotal.setSpacingAfter(2f);
-                document.add(articleSubtotal);
-            }
-
-            document.add(dashedSeparator());
-
-            // ── Totaux ───────────────────────────────────────────────────
-            BigDecimal total    = order.getTotalAmount() != null ? order.getTotalAmount() : computedTotal;
-            BigDecimal discount = order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO;
-            // CORRECTION : le "NET À PAYER" utilisait auparavant total-discount
-            // calculé localement, ignorant les points de fidélité utilisés —
-            // ce qui pouvait diverger de l'API (OrderDto.netAmountDue). On
-            // utilise désormais directement la valeur transmise par
-            // TicketServiceImpl, seule source de vérité. Voir revue de code,
-            // règle manquante n°13.
-            BigDecimal netTotal = netAmountDue != null ? netAmountDue : total.subtract(discount);
-            int loyaltyPointsUsed = order.getLoyaltyPointsUsed() != null ? order.getLoyaltyPointsUsed() : 0;
-
-            addTotalLine(document, "Total brut", total.toPlainString() + " FCFA", normalFont, normalFont);
-            if (discount.signum() > 0) {
-                addTotalLine(document, "Remise", "- " + discount.toPlainString() + " FCFA", normalFont, normalFont);
-            }
-            if (loyaltyPointsUsed > 0) {
-                addTotalLine(document, "Points fidélité utilisés", "-" + loyaltyPointsUsed + " pt(s)", normalFont, normalFont);
-            }
-
-            Paragraph netSep = new Paragraph(" ", smallFont);
-            netSep.setSpacingAfter(1);
-            document.add(netSep);
-            addTotalLine(document, "NET À PAYER", netTotal.toPlainString() + " FCFA", totalFont, totalFont);
-
-            // ── Statut de paiement ───────────────────────────────────────
-            PaymentStatus effectiveStatus = order.getPaymentStatus() != null ? order.getPaymentStatus() : PaymentStatus.PENDING;
-            String paymentLabel;
-            Color statusColor;
-            switch (effectiveStatus) {
-                case COMPLETED:
-                    paymentLabel = "PAYÉ";
-                    statusColor = new Color(21, 128, 61);
-                    break;
-                case FAILED:
-                    paymentLabel = "PAIEMENT ÉCHOUÉ";
-                    statusColor = new Color(185, 28, 28);
-                    break;
-                case REFUNDED:
-                    paymentLabel = "REMBOURSÉ";
-                    statusColor = new Color(71, 85, 105);
-                    break;
-                default:
-                    paymentLabel = "EN ATTENTE DE PAIEMENT";
-                    statusColor = new Color(180, 83, 9);
-            }
-            statusFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, statusColor);
-            addCentered(document, paymentLabel, statusFont, 8f, 8f);
-
-            // ── Signatures ───────────────────────────────────────────────
-            PdfPTable signTable = new PdfPTable(2);
-            signTable.setWidthPercentage(100);
-            signTable.setSpacingBefore(6);
-            signTable.setSpacingAfter(6);
-
-            Font signFont = FontFactory.getFont(FontFactory.HELVETICA, 7.5f, Color.GRAY);
-            addSignatureCell(signTable, "Signature client", signFont);
-            addSignatureCell(signTable, "Signature caisse", signFont);
-            document.add(signTable);
-
-            document.add(dashedSeparator());
-            addCentered(document, "Merci pour votre achat", contactFont, 4f, 0f);
+            renderCopy(document, order, articles, services, reference, shop, issuedBy, netAmountDue, "EXEMPLAIRE CLIENT");
+            addCutLine(document);
+            renderCopy(document, order, articles, services, reference, shop, issuedBy, netAmountDue, "EXEMPLAIRE CAISSE");
 
             document.close();
             return out.toByteArray();
         } catch (DocumentException e) {
             throw new IllegalStateException("Erreur lors de la génération du reçu PDF : " + e.getMessage(), e);
         }
+    }
+
+    /** Construit un exemplaire complet du reçu (client ou caisse) dans le document courant. */
+    private static void renderCopy(Document document, Order order, List<Article> articles, List<ArticleService> services,
+                                   String reference, ShopProperties shop, User issuedBy, BigDecimal netAmountDue,
+                                   String copyLabel) throws DocumentException {
+
+        Font shopFont      = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY);
+        Font contactFont   = FontFactory.getFont(FontFactory.HELVETICA, 7.5f, Color.DARK_GRAY);
+        Font labelFont     = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8.5f, TEXT_DARK);
+        Font refFont       = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9.5f, PRIMARY);
+        Font normalFont    = FontFactory.getFont(FontFactory.HELVETICA, 8.5f, TEXT_DARK);
+        Font articleFont   = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8.5f, PRIMARY);
+        Font serviceFont   = FontFactory.getFont(FontFactory.HELVETICA, 8f, TEXT_DARK);
+        Font subtotalFont  = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 7.5f, Color.DARK_GRAY);
+        Font statusFont;
+
+        // ── En-tête établissement : bandeau bleu clair ──────────────────
+        addBanner(document, shop.getName(), shopFont);
+        addCentered(document, shop.getPhone(), contactFont, 1f, 0f);
+        addCentered(document, shop.getEmail(), contactFont, 0f, 5f);
+
+        addCentered(document, "REÇU DE VENTE", labelFont, 2f, 1f);
+        addCentered(document, "N° " + reference, refFont, 0f, 5f);
+
+        // ── Badge "EXEMPLAIRE ..." (pastille bleue, comme sur le modèle) ─
+        addBadge(document, copyLabel, 55f, 3f, 6f);
+
+        // ── Informations commande (tableau zébré) ────────────────────────
+        User client = order.getClientUser();
+        String clientName = client != null
+                ? (safe(client.getFirstName()) + " " + safe(client.getLastName())).trim()
+                : "-";
+
+        List<String[]> infoRows = new ArrayList<>();
+        infoRows.add(new String[]{"Client", clientName.isEmpty() ? "-" : clientName});
+        infoRows.add(new String[]{"Commande", "N°" + order.getId()});
+        infoRows.add(new String[]{"Date", DATETIME_FMT.format(Instant.now().atZone(ZoneId.systemDefault()))});
+        if (order.getCreatedBy() != null) {
+            String cashier = (safe(order.getCreatedBy().getFirstName()) + " " + safe(order.getCreatedBy().getLastName())).trim();
+            if (!cashier.isEmpty()) {
+                infoRows.add(new String[]{"Caissier", cashier});
+            }
+        }
+        if (issuedBy != null) {
+            String issuer = (safe(issuedBy.getFirstName()) + " " + safe(issuedBy.getLastName())).trim();
+            if (!issuer.isEmpty()) {
+                infoRows.add(new String[]{"Émis par", issuer});
+            }
+        }
+        addInfoTable(document, infoRows, labelFont, normalFont);
+
+        // ── Détail par article : chaque vêtement avec les services
+        //    qui lui sont appliqués et leur prix ────────────────────────
+        Map<Long, List<ArticleService>> servicesByArticle = new LinkedHashMap<>();
+        if (services != null) {
+            for (ArticleService service : services) {
+                Long articleId = service.getArticle() != null ? service.getArticle().getId() : null;
+                servicesByArticle.computeIfAbsent(articleId, k -> new ArrayList<>()).add(service);
+            }
+        }
+
+        BigDecimal computedTotal = BigDecimal.ZERO;
+        int articleIndex = 0;
+        for (Article article : articles) {
+            articleIndex++;
+            List<ArticleService> articleServices = servicesByArticle.get(article.getId());
+
+            Paragraph articleTitle = new Paragraph(articleIndex + ". " + formatArticleLabel(article), articleFont);
+            articleTitle.setSpacingBefore(articleIndex == 1 ? 2f : 6f);
+            articleTitle.setSpacingAfter(2f);
+            document.add(articleTitle);
+
+            PdfPTable serviceTable = new PdfPTable(2);
+            serviceTable.setWidthPercentage(100);
+            serviceTable.setWidths(new float[]{2.6f, 1.4f});
+            serviceTable.setSpacingAfter(1f);
+
+            BigDecimal articleTotal = BigDecimal.ZERO;
+            if (articleServices != null && !articleServices.isEmpty()) {
+                for (ArticleService as : articleServices) {
+                    BigDecimal price = as.getAppliedPrice() != null ? as.getAppliedPrice() : BigDecimal.ZERO;
+                    articleTotal = articleTotal.add(price);
+                    addServiceRow(serviceTable, "  • " + formatServiceType(as.getService()), price.toPlainString() + " F", serviceFont);
+                }
+            } else {
+                addServiceRow(serviceTable, "  • Aucun service enregistré", "-", serviceFont);
+            }
+            document.add(serviceTable);
+
+            computedTotal = computedTotal.add(articleTotal);
+
+            Paragraph articleSubtotal = new Paragraph("Sous-total : " + articleTotal.toPlainString() + " F", subtotalFont);
+            articleSubtotal.setAlignment(Element.ALIGN_RIGHT);
+            articleSubtotal.setSpacingAfter(2f);
+            document.add(articleSubtotal);
+        }
+
+        document.add(dashedSeparator());
+
+        // ── Totaux ───────────────────────────────────────────────────
+        BigDecimal total    = order.getTotalAmount() != null ? order.getTotalAmount() : computedTotal;
+        BigDecimal discount = order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO;
+        // CORRECTION : le "NET À PAYER" utilisait auparavant total-discount
+        // calculé localement, ignorant les points de fidélité utilisés —
+        // ce qui pouvait diverger de l'API (OrderDto.netAmountDue). On
+        // utilise désormais directement la valeur transmise par
+        // TicketServiceImpl, seule source de vérité. Voir revue de code,
+        // règle manquante n°13.
+        BigDecimal netTotal = netAmountDue != null ? netAmountDue : total.subtract(discount);
+        int loyaltyPointsUsed = order.getLoyaltyPointsUsed() != null ? order.getLoyaltyPointsUsed() : 0;
+
+        addTotalLine(document, "Total brut", total.toPlainString() + " FCFA", normalFont, normalFont);
+        if (discount.signum() > 0) {
+            addTotalLine(document, "Remise", "- " + discount.toPlainString() + " FCFA", normalFont, normalFont);
+        }
+        if (loyaltyPointsUsed > 0) {
+            addTotalLine(document, "Points fidélité utilisés", "-" + loyaltyPointsUsed + " pt(s)", normalFont, normalFont);
+        }
+
+        // ── Bandeau "NET À PAYER" mis en évidence, comme "MONTANT NET À
+        //    PAYER" sur le document de référence ─────────────────────────
+        addBanner(document, netTotal.toPlainString() + " FCFA");
+
+        // ── Statut de paiement (pastille colorée) ────────────────────────
+        PaymentStatus effectiveStatus = order.getPaymentStatus() != null ? order.getPaymentStatus() : PaymentStatus.PENDING;
+        String paymentLabel;
+        Color statusColor = switch (effectiveStatus) {
+            case COMPLETED -> {
+                paymentLabel = "PAYÉ";
+                yield new Color(21, 128, 61);
+            }
+            case FAILED -> {
+                paymentLabel = "PAIEMENT ÉCHOUÉ";
+                yield new Color(185, 28, 28);
+            }
+            case REFUNDED -> {
+                paymentLabel = "REMBOURSÉ";
+                yield new Color(71, 85, 105);
+            }
+            default -> {
+                paymentLabel = "EN ATTENTE DE PAIEMENT";
+                yield new Color(180, 83, 9);
+            }
+        };
+        statusFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8f, Color.WHITE);
+        addColoredBadge(document, paymentLabel, statusColor, statusFont, 65f, 6f, 6f);
+
+        // ── Signatures ───────────────────────────────────────────────
+        PdfPTable signTable = new PdfPTable(2);
+        signTable.setWidthPercentage(100);
+        signTable.setSpacingBefore(6);
+        signTable.setSpacingAfter(6);
+
+        Font signFont = FontFactory.getFont(FontFactory.HELVETICA, 7.5f, Color.GRAY);
+        addSignatureCell(signTable, "Signature client", signFont);
+        addSignatureCell(signTable, "Signature caisse", signFont);
+        document.add(signTable);
+
+        addCentered(document, "Merci pour votre achat", contactFont, 2f, 0f);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────
@@ -264,27 +266,26 @@ public final class ReceiptPdfGenerator {
     }
 
     private static String formatClothingType(ClothingType type) {
-        switch (type) {
-            case SHIRT:      return "Chemise";
-            case T_SHIRT:    return "T-shirt";
-            case PANTS:      return "Pantalon";
-            case JEANS:      return "Jeans";
-            case SKIRT:      return "Jupe";
-            case DRESS:      return "Robe";
-            case JACKET:     return "Veste";
-            case COAT:       return "Manteau";
-            case SWEATER:    return "Pull";
-            case BLOUSE:     return "Blouse";
-            case UNDERWEAR:  return "Sous-vêtement";
-            case SOCKS:      return "Chaussettes";
-            case SUIT:       return "Costume";
-            case VEST:       return "Gilet";
-            case SHORTS:     return "Short";
-            case SCARF:      return "Écharpe";
-            case GLOVES:     return "Gants";
-            case BELT:       return "Ceinture";
-            default:         return type.name();
-        }
+        return switch (type) {
+            case SHIRT -> "Chemise";
+            case T_SHIRT -> "T-shirt";
+            case PANTS -> "Pantalon";
+            case JEANS -> "Jeans";
+            case SKIRT -> "Jupe";
+            case DRESS -> "Robe";
+            case JACKET -> "Veste";
+            case COAT -> "Manteau";
+            case SWEATER -> "Pull";
+            case BLOUSE -> "Blouse";
+            case UNDERWEAR -> "Sous-vêtement";
+            case SOCKS -> "Chaussettes";
+            case SUIT -> "Costume";
+            case VEST -> "Gilet";
+            case SHORTS -> "Short";
+            case SCARF -> "Écharpe";
+            case GLOVES -> "Gants";
+            case BELT -> "Ceinture";
+        };
     }
 
     private static String formatSizeType(SizeType size) {
@@ -292,22 +293,14 @@ public final class ReceiptPdfGenerator {
     }
 
     private static String formatServiceType(ServiceType type) {
-        switch (type) {
-            case DRY_CLEAN:
-                return "Nettoyage à sec";
-            case WASH:
-                return "Lavage";
-            case IRON:
-                return "Repassage";
-            case STAIN_REMOVAL:
-                return "Détachage";
-            case DEYING:
-                return "Teinture";
-            case ALTERATION:
-                return "Retouche";
-            default:
-                return type.name();
-        }
+        return switch (type) {
+            case DRY_CLEAN -> "Nettoyage à sec";
+            case WASH -> "Lavage";
+            case IRON -> "Repassage";
+            case STAIN_REMOVAL -> "Détachage";
+            case DEYING -> "Teinture";
+            case ALTERATION -> "Retouche";
+        };
     }
 
     private static void addCentered(Document document, String text, Font font, float before, float after) throws DocumentException {
@@ -318,12 +311,101 @@ public final class ReceiptPdfGenerator {
         document.add(p);
     }
 
-    private static void addInfoLine(Document document, String label, String value, Font labelFont, Font valueFont) throws DocumentException {
-        Paragraph p = new Paragraph();
-        p.add(new com.lowagie.text.Chunk(label + " : ", labelFont));
-        p.add(new com.lowagie.text.Chunk(value, valueFont));
-        p.setSpacingAfter(1.5f);
-        document.add(p);
+    /** Bandeau plein fond bleu (en-tête boutique, ou ligne "NET À PAYER" mise en évidence). */
+    private static void addBanner(Document document, String text, Font labelFont) throws DocumentException {
+        PdfPTable t = new PdfPTable(1);
+        t.setWidthPercentage(100);
+        t.setSpacingAfter(2f);
+        PdfPCell cell = new PdfPCell(new Phrase(text, labelFont));
+        cell.setBackgroundColor(PRIMARY_LIGHT);
+        cell.setBorder(0);
+        cell.setPadding(6f);
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        t.addCell(cell);
+        document.add(t);
+    }
+
+    /** Bandeau libellé/valeur en évidence (fond bleu plein, texte blanc) — ex. "NET À PAYER". */
+    private static void addBanner(Document document, String value) throws DocumentException {
+        PdfPTable t = new PdfPTable(2);
+        t.setWidthPercentage(100);
+        t.setWidths(new float[]{1.1f, 1f});
+        t.setSpacingBefore(5f);
+        t.setSpacingAfter(6f);
+
+        Font labelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9.5f, Color.WHITE);
+        Font valueFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11f, Color.WHITE);
+
+        PdfPCell l = new PdfPCell(new Phrase("NET À PAYER", labelFont));
+        l.setBackgroundColor(PRIMARY);
+        l.setBorder(0);
+        l.setPadding(6f);
+        l.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
+        PdfPCell v = new PdfPCell(new Phrase(value, valueFont));
+        v.setBackgroundColor(PRIMARY);
+        v.setBorder(0);
+        v.setPadding(6f);
+        v.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        v.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
+        t.addCell(l);
+        t.addCell(v);
+        document.add(t);
+    }
+
+    /** Pastille centrée bleue (ex. "EXEMPLAIRE CLIENT"), largeur réduite façon badge. */
+    private static void addBadge(Document document, String text, float widthPercent, float before, float after) throws DocumentException {
+        Font badgeFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8f, Color.WHITE);
+        addColoredBadge(document, text, PRIMARY, badgeFont, widthPercent, before, after);
+    }
+
+    /** Pastille centrée de couleur arbitraire (réutilisée pour le statut de paiement). */
+    private static void addColoredBadge(Document document, String text, Color bg, Font font, float widthPercent, float before, float after) throws DocumentException {
+        PdfPTable t = new PdfPTable(1);
+        t.setWidthPercentage(widthPercent);
+        t.setHorizontalAlignment(Element.ALIGN_CENTER);
+        t.setSpacingBefore(before);
+        t.setSpacingAfter(after);
+        PdfPCell cell = new PdfPCell(new Phrase(text, font));
+        cell.setBackgroundColor(bg);
+        cell.setBorder(0);
+        cell.setPadding(4f);
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        t.addCell(cell);
+        document.add(t);
+    }
+
+    /** Tableau d'informations zébré (fond bleu clair une ligne sur deux), bordures bleu clair. */
+    private static void addInfoTable(Document document, List<String[]> rows, Font labelFont, Font valueFont) throws DocumentException {
+        PdfPTable t = new PdfPTable(2);
+        t.setWidthPercentage(100);
+        t.setWidths(new float[]{1f, 1.4f});
+        t.setSpacingBefore(3f);
+        t.setSpacingAfter(4f);
+
+        boolean alt = false;
+        for (String[] row : rows) {
+            Color bg = alt ? PRIMARY_LIGHT : Color.WHITE;
+
+            PdfPCell l = new PdfPCell(new Phrase(row[0], labelFont));
+            l.setBackgroundColor(bg);
+            l.setBorderColor(BORDER_BLUE);
+            l.setBorderWidth(0.4f);
+            l.setPadding(3.5f);
+
+            PdfPCell v = new PdfPCell(new Phrase(row[1], valueFont));
+            v.setBackgroundColor(bg);
+            v.setBorderColor(BORDER_BLUE);
+            v.setBorderWidth(0.4f);
+            v.setPadding(3.5f);
+            v.setHorizontalAlignment(Element.ALIGN_RIGHT);
+
+            t.addCell(l);
+            t.addCell(v);
+            alt = !alt;
+        }
+        document.add(t);
     }
 
     private static void addTotalLine(Document document, String label, String value, Font labelFont, Font valueFont) throws DocumentException {
@@ -331,12 +413,12 @@ public final class ReceiptPdfGenerator {
         row.setWidthPercentage(100);
         row.setWidths(new float[]{1f, 1f});
 
-        PdfPCell labelCell = new PdfPCell(new com.lowagie.text.Phrase(label, labelFont));
+        PdfPCell labelCell = new PdfPCell(new Phrase(label, labelFont));
         labelCell.setBorder(0);
         labelCell.setPadding(1);
         row.addCell(labelCell);
 
-        PdfPCell valueCell = new PdfPCell(new com.lowagie.text.Phrase(value, valueFont));
+        PdfPCell valueCell = new PdfPCell(new Phrase(value, valueFont));
         valueCell.setBorder(0);
         valueCell.setPadding(1);
         valueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
@@ -346,22 +428,27 @@ public final class ReceiptPdfGenerator {
     }
 
     private static void addServiceRow(PdfPTable table, String label, String value, Font font) {
-        PdfPCell labelCell = new PdfPCell(new com.lowagie.text.Phrase(label, font));
+        PdfPCell labelCell = new PdfPCell(new Phrase(label, font));
         labelCell.setBorder(0);
         labelCell.setPadding(1.5f);
         table.addCell(labelCell);
 
-        PdfPCell valueCell = new PdfPCell(new com.lowagie.text.Phrase(value, font));
+        PdfPCell valueCell = new PdfPCell(new Phrase(value, font));
         valueCell.setBorder(0);
         valueCell.setPadding(1.5f);
         valueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
         table.addCell(valueCell);
     }
 
+    /** Encadré de signature (bordure fine bleu clair), avec espace pour signer. */
     private static void addSignatureCell(PdfPTable table, String label, Font font) {
         PdfPCell cell = new PdfPCell();
-        cell.setBorder(0);
-        cell.setPaddingTop(14);
+        cell.setBorderColor(BORDER_BLUE);
+        cell.setBorderWidth(0.6f);
+        cell.setPaddingTop(16);
+        cell.setPaddingBottom(6);
+        cell.setPaddingLeft(4);
+        cell.setPaddingRight(4);
         Paragraph p = new Paragraph(label + "\nNom et cachet", font);
         p.setAlignment(Element.ALIGN_CENTER);
         cell.addElement(p);
@@ -370,9 +457,17 @@ public final class ReceiptPdfGenerator {
 
     private static LineSeparator dashedSeparator() {
         LineSeparator separator = new LineSeparator();
-        separator.setLineColor(Color.LIGHT_GRAY);
+        separator.setLineColor(BORDER_BLUE);
         separator.setLineWidth(0.6f);
         return separator;
+    }
+
+    /** Ligne de coupe entre les deux exemplaires (client / caisse), comme sur le modèle de référence. */
+    private static void addCutLine(Document document) throws DocumentException {
+        document.add(dashedSeparator());
+        Font f = FontFactory.getFont(FontFactory.HELVETICA, 7.5f, Color.GRAY);
+        addCentered(document, "✂  COUPER ICI  ✂", f, 3f, 3f);
+        document.add(dashedSeparator());
     }
 
     private static String safe(String value) {
