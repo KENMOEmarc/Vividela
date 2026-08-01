@@ -71,7 +71,7 @@ Backend Spring Boot pour l'authentification utilisateur. Architecture MVC strict
 ## 2. Structure des packages
 
 ```
-com.template.auth/
+com.template.vivid/
 │
 ├── AuthApplication.java          ← Point d'entrée @SpringBootApplication
 │
