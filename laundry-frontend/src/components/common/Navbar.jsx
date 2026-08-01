@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { ROUTES } from '../../utils/constants'
 import {
-  Shield, LayoutDashboard, User, LogOut,
+  Shirt, LayoutDashboard, User, LogOut,
   LogIn, UserPlus, Menu, X
 } from 'lucide-react'
 
@@ -33,11 +33,11 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
 
-          {/* Logo */}
-          <Link to={ROUTES.HOME} className="flex items-center gap-2 text-white font-bold text-lg hover:text-blue-200 transition-colors">
-            <Shield size={20} />
-            Vividela
-          </Link>
+           {/* Logo */}
+           <Link to={ROUTES.HOME} className="flex items-center gap-2 text-white font-bold text-lg hover:text-blue-200 transition-colors">
+             <Shirt size={20} />
+             Vividela
+           </Link>
 
           {/* Desktop */}
           <div className="hidden sm:flex items-center gap-3">

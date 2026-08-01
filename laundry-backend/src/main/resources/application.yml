@@ -89,26 +89,6 @@ spring:
     serialization:
       write-dates-as-timestamps: false   # LocalDateTime → ISO-8601 ("2024-01-15T10:30:00")
     time-zone: UTC
-
-  # ---------------------------------------------------------------------------
-  # REDIS — Stockage clé/valeur en mémoire
-  # Rôle : blacklist des tokens JWT révoqués + cache éventuel
-  # ---------------------------------------------------------------------------
-  data:
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD}
-      timeout: 2000ms                # Délai max d'une commande Redis
-
-  # ---------------------------------------------------------------------------
-  # CACHE — Spring Cache abstraction avec Redis comme provider
-  # ---------------------------------------------------------------------------
-  cache:
-    type: redis
-    redis:
-      time-to-live: 3600000          # TTL par défaut : 1 heure (ms)
-
   # ---------------------------------------------------------------------------
   # SPRING AI — GOOGLE GENAI (GEMINI) — analyse du sentiment des avis clients
   # (voir GeminiReviewAnalysisService). Clé API gratuite : aistudio.google.com/apikey
@@ -137,6 +117,13 @@ server:
 # ---------------------------------------------------------------------------
 # JWT — Configuration du token JSON Web Token
 # ---------------------------------------------------------------------------
+security:
+  jwt:
+    blacklist-cleanup:
+      # Délai entre deux exécutions du job de purge des tokens révoqués
+      # expirés dans la table revoked_tokens (ms). Défaut : 1 heure.
+      fixed-delay-ms: ${JWT_BLACKLIST_CLEANUP_FIXED_DELAY_MS:3600000}
+
 # ---------------------------------------------------------------------------
 # NOTIFICATIONS — Expéditeur par défaut des emails sortants
 # ---------------------------------------------------------------------------
@@ -172,10 +159,14 @@ vividela:
   loyalty:
     point-value: ${LOYALTY_POINT_VALUE:50}
     earn-rate-per-currency-unit: ${LOYALTY_EARN_RATE:0.01}
+    max-points-per-order: ${LOYALTY_MAX_POINTS_PER_ORDER:1000}
+    points-per-cfa: ${LOYALTY_POINTS_PER_CFA:1}
   # AJOUT : durée de validité d'un ticket de dépôt (code-barres) avant
   # passage automatique au statut EXPIRED (voir TicketServiceImpl).
   ticket:
     validity-days: ${TICKET_VALIDITY_DAYS:90}
+    expiration-days: ${TICKET_EXPIRATION_DAYS:3}
+
 
 jwt:
   # Clé secrète de signature HS256 (min 256 bits = 32 caractères)

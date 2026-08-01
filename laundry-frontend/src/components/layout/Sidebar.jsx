@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Shield, ChevronLeft, ChevronRight, LogOut } from 'lucide-react'
+import { Shirt, ChevronLeft, ChevronRight, LogOut } from 'lucide-react'
 import { ROUTES, ROLE_LABELS } from '../../utils/constants'
 import { useAuth } from '../../context/AuthContext'
 import { NAV_SECTIONS, ROLE_BADGE } from './SidebarData'
@@ -28,11 +28,11 @@ const Sidebar = ({ collapsed, mobileOpen, onCollapse, onMobileClose }) => {
   const inner = (
     <div className="flex flex-col h-full bg-slate-950 overflow-hidden select-none">
 
-      {/* ── Logo ───────────────────────────────────────────────── */}
-      <div className={`flex items-center h-16 px-4 border-b border-white/5 flex-shrink-0 ${collapsed ? 'justify-center' : 'gap-3'}`}>
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/30">
-          <Shield size={15} className="text-white" />
-        </div>
+       {/* ── Logo ───────────────────────────────────────────────── */}
+       <div className={`flex items-center h-16 px-4 border-b border-white/5 flex-shrink-0 ${collapsed ? 'justify-center' : 'gap-3'}`}>
+         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/30">
+           <Shirt size={15} className="text-white" />
+         </div>
         {!collapsed && (
           <div className="overflow-hidden">
             <p className="font-bold text-white text-sm leading-tight">Vividela</p>
