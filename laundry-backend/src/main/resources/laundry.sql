@@ -3,7 +3,7 @@
 -- ============================================================
 -- Toutes les colonnes ENUM ci-dessous sont volontairement alignées, valeur
 -- pour valeur ET, quand c'est pertinent, ordre pour ordre, sur les enums Java
--- du backend (package com.template.auth.model.enums) :
+-- du backend (package com.template.vivid.model.enums) :
 --   orders.status         <-> OrderStatus
 --   orders.payment_status <-> PaymentStatus
 --   payments.status       <-> PaymentStatus
@@ -24,14 +24,10 @@
 -- ============================================================
 
 -- ============================================================
--- 1. TABLES DE RÉFÉRENCE (seulement email_templates, tout le reste est en ENUM)
+-- 1. TABLES DE RÉFÉRENCE
 -- ============================================================
-CREATE TABLE email_templates (
-                                 id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                 name VARCHAR(100) UNIQUE NOT NULL,
-                                 subject VARCHAR(255) NOT NULL,
-                                 html_body LONGTEXT NOT NULL
-);
+-- Remarque : email_templates a été supprimée. Le système de
+-- notifications génère maintenant les messages dynamiquement.
 
 -- ============================================================
 -- 2. TABLES MÉTIER AVEC ÉNUMÉRATIONS
@@ -137,20 +133,27 @@ CREATE TABLE payments (
 );
 
 -- Notifications (type <-> NotificationType, statut <-> RequestStatus)
+-- MODIFICATION : colonne template_id supprimée ; les messages sont
+-- générés dynamiquement dans le code (NotificationServiceImpl).
+-- Nouvelles colonnes (voir db/add-notification-retry-columns.sql) :
+--   - retry_count : nombre de tentatives de reprise d'envoi
+--   - last_attempt_at : date de la dernière tentative d'envoi
+--   - escalated : indique si un échec définitif a déjà été signalé
 CREATE TABLE notifications (
                                id BIGINT AUTO_INCREMENT PRIMARY KEY,
                                user_id BIGINT NOT NULL,
                                order_id BIGINT,
-                               template_id BIGINT,
                                subject VARCHAR(255),
                                message TEXT,
                                notification_type ENUM('EMAIL','SMS','PUSH','IN_APP','PHONE_CALL') NOT NULL,
                                status ENUM('PENDING','SUCCESS','FAILED') NOT NULL DEFAULT 'PENDING',
                                is_read BOOLEAN NOT NULL DEFAULT FALSE,
                                sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                               retry_count INT DEFAULT 0,
+                               last_attempt_at TIMESTAMP NULL,
+                               escalated BOOLEAN DEFAULT FALSE,
                                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-                               FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE,
-                               FOREIGN KEY(template_id) REFERENCES email_templates(id) ON DELETE SET NULL
+                               FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
 
 -- Avis clients (formulaire envoyé à la livraison, sentiment <-> FeedbackSentiment)
@@ -318,75 +321,16 @@ INSERT INTO service_prices (clothing_type, service, price, active) VALUES
                                                                        ('SHIRT', 'STAIN_REMOVAL', 1000, TRUE),
                                                                        ('SHIRT', 'ALTERATION', 1200, TRUE),
                                                                        ('PANTS', 'STAIN_REMOVAL', 1500, TRUE),
-                                                                       ('PANTS', 'ALTERATION', 2000, TRUE);
-
--- Modèles d'e-mails (français)
-INSERT INTO email_templates (name, subject, html_body) VALUES
-                                                           ('welcome', 'Bienvenue chez Pressing+', '<h1>Bienvenue !</h1><p>Merci de vous être inscrit.</p>'),
-                                                           ('order_confirmation', 'Confirmation de votre commande', '<h1>Commande confirmée</h1><p>Votre commande #{{order_id}} a bien été enregistrée.</p>'),
-                                                           ('password_reset', 'Réinitialisation de votre mot de passe', '<h1>Mot de passe oublié</h1><p>Cliquez sur le lien pour le réinitialiser.</p>'),
-                                                           ('order_received', 'Votre commande {{order_id}} a bien été réceptionnée',
-                                                            '<h1>Merci {{customer_name}} !</h1>
-                                                             <p>Nous avons bien enregistré votre commande <strong>#{{order_id}}</strong>.</p>
-                                                             <p>Date de dépôt : {{deposit_date}}<br>
-                                                             Retrait estimé : {{estimated_pickup_date}}</p>
-                                                             <p>Vous recevrez une notification dès que vos articles seront prêts.</p>'),
-                                                           ('order_in_progress', 'Votre commande {{order_id}} est en cours de traitement',
-                                                            '<h1>Bonjour {{customer_name}},</h1>
-                                                             <p>Votre commande <strong>#{{order_id}}</strong> est actuellement en cours de traitement dans notre atelier.</p>
-                                                             <p>Articles concernés : {{items_list}}</p>
-                                                             <p>Nous mettons tout en œuvre pour vous la rendre dans les délais annoncés.</p>'),
-                                                           ('order_ready', 'Votre commande {{order_id}} est prête !',
-                                                            '<h1>Bonne nouvelle {{customer_name}} !</h1>
-                                                             <p>Votre commande <strong>#{{order_id}}</strong> est prête et vous attend en boutique.</p>
-                                                             <p>Date de disponibilité : {{ready_date}}<br>
-                                                             Boutique : {{shop_address}}</p>
-                                                             <p>Merci de venir la récupérer avant le {{expiry_date}}.</p>'),
-                                                           ('order_completed', 'Votre commande {{order_id}} a été retirée',
-                                                            '<h1>Merci {{customer_name}} !</h1>
-                                                             <p>Nous confirmons que vous avez bien retiré votre commande <strong>#{{order_id}}</strong> le {{pickup_date}}.</p>
-                                                             <p>Nous espérons que le résultat vous donne satisfaction. À bientôt !</p>'),
-                                                           ('order_delayed', 'Information concernant votre commande {{order_id}}',
-                                                            '<h1>Bonjour {{customer_name}},</h1>
-                                                             <p>Nous tenons à vous informer que le traitement de votre commande <strong>#{{order_id}}</strong> prend un peu plus de temps que prévu.</p>
-                                                             <p>Nouvelle estimation de disponibilité : {{new_estimated_date}}</p>
-                                                             <p>Nous vous prions de nous excuser pour ce désagrément.</p>'),
-                                                           ('pickup_reminder', 'Rappel : votre commande {{order_id}} vous attend',
-                                                            '<h1>Bonjour {{customer_name}},</h1>
-                                                             <p>Votre commande <strong>#{{order_id}}</strong> est prête depuis le {{ready_date}} et n’a pas encore été récupérée.</p>
-                                                             <p>Dernier délai de retrait : {{expiry_date}}.</p>
-                                                             <p>Passé ce délai, des frais de garde pourraient s’appliquer.</p>'),
-                                                           ('all_items_washed', 'Votre commande {{order_id}} : tous les articles ont été lavés',
-                                                            '<h1>Bonjour {{customer_name}},</h1>
-                                                             <p>Bonne nouvelle : tous les vêtements de votre commande <strong>#{{order_id}}</strong> ont terminé l’étape de <strong>lavage</strong>.</p>
-                                                             <p>Ils passent maintenant aux étapes de séchage et de finition.</p>
-                                                             <p>Articles concernés : {{items_list}}</p>
-                                                             <p>Nous vous tiendrons informé(e) de la suite.</p>'),
-                                                           ('all_items_ironed', 'Commande {{order_id}} : repassage terminé pour tous vos articles',
-                                                            '<h1>Bonjour {{customer_name}},</h1>
-                                                             <p>Le repassage de l’ensemble des articles de votre commande <strong>#{{order_id}}</strong> vient de s’achever.</p>
-                                                             <p>{{items_list}}</p>
-                                                             <p>Prochaine étape : contrôle qualité.</p>
-                                                             <p>À bientôt !</p>'),
-                                                           ('all_items_quality_checked', 'Commande {{order_id}} : tous vos articles passent le contrôle qualité',
-                                                            '<h1>Bonjour {{customer_name}},</h1>
-                                                             <p>Un petit mot pour vous dire que chaque vêtement de votre commande <strong>#{{order_id}}</strong> est actuellement vérifié par notre équipe qualité.</p>
-                                                             <p>Nous nous assurons que tout soit impeccable avant la mise à disposition.</p>
-                                                             <p>Vous serez prévenu(e) dès que le colis sera prêt.</p>'),
-                                                           ('all_items_packed', 'Commande {{order_id}} : vos vêtements sont emballés',
-                                                            '<h1>Bonjour {{customer_name}},</h1>
-                                                             <p>Nous venons de finaliser l’emballage de votre commande <strong>#{{order_id}}</strong>.</p>
-                                                             <p>{{items_list}} sont maintenant protégés et sur le point d’être acheminés vers notre point de retrait.</p>
-                                                             <p>Un dernier contrôle et vous recevrez la confirmation de mise à disposition.</p>');
+                                                                        ('PANTS', 'ALTERATION', 2000, TRUE);
 
 -- Produits (consommables)
 INSERT INTO products (name, threshold_value, measurement_unit) VALUES
-                                                                   ('Lessive Omo', 5.00, 'KG'),
-                                                                   ('Détachant local', 2.00, 'LITER'),
-                                                                   ('Assouplissant', 3.00, 'LITER'),
-                                                                   ('Carton de protection', 50.00, 'UNIT'),
-                                                                   ('Cintre', 100.00, 'UNIT'),
-                                                                   ('Sachet plastique', 200.00, 'PACKET');
+                                                                    ('Lessive Omo', 5.00, 'KG'),
+                                                                    ('Détachant local', 2.00, 'LITER'),
+                                                                    ('Assouplissant', 3.00, 'LITER'),
+                                                                    ('Carton de protection', 50.00, 'UNIT'),
+                                                                    ('Cintre', 100.00, 'UNIT'),
+                                                                    ('Sachet plastique', 200.00, 'PACKET');
 
 -- Stocks initiaux
 INSERT INTO stocks (product_id, current_quantity) VALUES
@@ -464,10 +408,11 @@ INSERT INTO payments (order_id, payment_method, amount, payer_phone, transaction
     (3, 'MOBILE_PAYMENT', 1500, '237698765432', 'OM-20260625-002', 'REFUNDED', 1);
 
 -- Notifications (une par commande, statut cohérent avec l'issue de l'envoi)
-INSERT INTO notifications (user_id, order_id, template_id, subject, message, notification_type, status, is_read) VALUES
-    (5, 1, (SELECT id FROM email_templates WHERE name='order_ready'),   'Votre commande est prête',   'Commande #1 prête à Douala - Bonaberi.', 'EMAIL', 'SUCCESS', TRUE),
-    (6, 2, (SELECT id FROM email_templates WHERE name='order_in_progress'), 'Commande en cours', 'Commande #2 en cours de traitement.', 'EMAIL', 'SUCCESS', FALSE),
-    (5, 3, (SELECT id FROM email_templates WHERE name='order_delayed'), 'Commande annulée', 'Commande #3 annulée, remboursement effectué.', 'SMS', 'SUCCESS', FALSE);
+-- MODIFICATION : template_id supprimé ; les messages sont générés dynamiquement.
+INSERT INTO notifications (user_id, order_id, subject, message, notification_type, status, is_read) VALUES
+    (5, 1, 'Votre commande est prête', 'Commande #1 prête à Douala - Bonaberi.', 'EMAIL', 'SUCCESS', TRUE),
+    (6, 2, 'Commande en cours', 'Commande #2 en cours de traitement.', 'EMAIL', 'SUCCESS', FALSE),
+    (5, 3, 'Commande annulée', 'Commande #3 annulée, remboursement effectué.', 'SMS', 'SUCCESS', FALSE);
 
 -- ============================================================
 -- FIN DU SCRIPT

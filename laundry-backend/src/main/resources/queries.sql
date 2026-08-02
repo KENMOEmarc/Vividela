@@ -212,9 +212,9 @@ INSERT INTO tickets (order_id, barcode, status) VALUES (6, 'PRS-006-CMR', 'GENER
 INSERT INTO tickets (order_id, barcode, status) VALUES (7, 'PRS-007-CMR', 'GENERATED');
 
 -- ============================================================
--- NOTIFICATIONS (2 requêtes avec sous‑requête)
+-- NOTIFICATIONS (test queries - template_id removed, messages generated dynamically)
 -- ============================================================
 
-INSERT INTO notifications (user_id, order_id, template_id, subject, message, notification_type, status) VALUES (5, 3, (SELECT id FROM email_templates WHERE name = 'order_in_progress'), 'Commande en cours', 'Votre commande est actuellement en cours de traitement.', 'IN_APP', 'SUCCESS');
+INSERT INTO notifications (user_id, order_id, subject, message, notification_type, status) VALUES (5, 3, 'Commande en cours', 'Votre commande est actuellement en cours de traitement.', 'IN_APP', 'SUCCESS');
 
-INSERT INTO notifications (user_id, order_id, template_id, subject, message, notification_type, status) VALUES (6, 6, (SELECT id FROM email_templates WHERE name = 'order_ready'), 'Commande prête', 'Vos vêtements sont prêts pour le retrait.', 'SMS', 'SUCCESS');
+INSERT INTO notifications (user_id, order_id, subject, message, notification_type, status) VALUES (6, 6, 'Commande prête', 'Vos vêtements sont prêts pour le retrait.', 'SMS', 'SUCCESS');

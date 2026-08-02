@@ -4,9 +4,8 @@ version: '3.8'
 # DOCKER COMPOSE — Environnement de développement local
 #
 # Services :
-#   mysql  → Base de données relationnelle MySQL 8.0
-#   redis  → Cache en mémoire + blacklist JWT
-#
+#   mysql  → Base de données relationnelle MySQL 8.0#
+
 # Démarrage : docker-compose up -d
 # Arrêt     : docker-compose down
 # Reset DB  : docker-compose down -v  (supprime les volumes)
@@ -19,7 +18,7 @@ services:
   # n'est nécessaire pour cela.
 
   adminer:
-    container_name: adminer-server
+    container_name: vivid-adminer
     image: adminer:4.8.1 # Use explicit version tag for security
     restart: always
     ports:
@@ -32,7 +31,7 @@ services:
   # ---------------------------------------------------------------------------
   mysql:
     image: mysql:8.0
-    container_name: auth-mysql
+    container_name: vivid-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -53,25 +52,6 @@ services:
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
 
-  # ---------------------------------------------------------------------------
-  # REDIS 7
-  # ---------------------------------------------------------------------------
-  redis:
-    image: redis:7-alpine
-    container_name: auth-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-
 volumes:
   mysql_data:
-    driver: local
-  redis_data:
     driver: local

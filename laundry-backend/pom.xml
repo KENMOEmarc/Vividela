@@ -28,7 +28,7 @@
 
     <name>vividela-backend</name>
     <description>
-        Architecture MVC | JWT | MySQL | Redis
+        Architecture MVC | JWT | MySQL
     </description>
 
     <!-- Version Java cible -->
@@ -38,7 +38,7 @@
         <jjwt.version>0.12.6</jjwt.version>
         <!-- Forcer connector-j 9.x pour MySQL 8.4 (suppression de mysql_native_password) -->
         <mysql-connector-j.version>9.1.0</mysql-connector-j.version>
-        <lombok.version>1.18.32</lombok.version>
+        <lombok.version>1.18.38</lombok.version>
         <!-- Spring AI — utilisé pour l'analyse IA (Gemini) des avis clients,
              voir GeminiReviewAnalysisService. -->
         <spring-ai.version>1.1.6</spring-ai.version>
@@ -114,17 +114,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-
-        <!-- =====================================================
-             REDIS — Spring Data Redis + Lettuce (client async).
-             Utilisé pour stocker la blacklist de tokens JWT
-             révoqués et le cache des sessions.
-             ===================================================== -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-
         <!-- =====================================================
              MYSQL — Driver JDBC pour la connexion à la base
              de données MySQL 8.x.
