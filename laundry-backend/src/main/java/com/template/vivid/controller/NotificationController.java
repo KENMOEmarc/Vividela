@@ -1,6 +1,6 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
+import com.template.vivid.model.payloads.responses.ApiResponse;
 import com.template.vivid.model.dto.NotificationDto;
 import com.template.vivid.model.entity.Notification;
 import com.template.vivid.model.entity.Order;

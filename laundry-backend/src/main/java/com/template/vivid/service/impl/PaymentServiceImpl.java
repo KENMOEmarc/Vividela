@@ -1,8 +1,11 @@
 package com.template.vivid.service.impl;
 
 import com.template.vivid.exception.ResourceNotFoundException;
+import com.template.vivid.exception.InvalidStateTransitionException;
+import com.template.vivid.exception.InvalidRequestException;
+import com.template.vivid.exception.DuplicateResourceException;
 import com.template.vivid.model.dto.PaymentDto;
-import com.template.vivid.model.dto.PaymentRequest;
+import com.template.vivid.model.payloads.requests.PaymentRequest;
 import com.template.vivid.model.entity.Order;
 import com.template.vivid.model.entity.Payment;
 import com.template.vivid.model.enums.OrderStatus;
@@ -49,13 +52,13 @@ public class PaymentServiceImpl implements PaymentService {
         log.debug("Enregistrement d'un paiement pour la commande: {}", request.getOrderId());
 
         Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                         "Commande introuvable avec l'ID: " + request.getOrderId()));
 
         // AJOUT : une commande annulée ne doit plus pouvoir recevoir de
         // paiement. Voir revue de code, règle manquante n°1.
         if (order.getStatus() == OrderStatus.CANCELLED) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Impossible d'enregistrer un paiement : la commande #" + order.getId() + " est annulée.");
         }
 
@@ -63,7 +66,7 @@ public class PaymentServiceImpl implements PaymentService {
         // de la validation Bean Validation @DecimalMin sur le DTO). Voir
         // revue de code, règle manquante n°5.
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Le montant du paiement doit être strictement positif.");
+            throw new InvalidRequestException("Le montant du paiement doit être strictement positif.");
         }
 
         // AJOUT : garde-fou anti-doublon — une référence de transaction déjà
@@ -73,7 +76,7 @@ public class PaymentServiceImpl implements PaymentService {
         if (request.getTransactionReference() != null && !request.getTransactionReference().isBlank()) {
             paymentRepository.findFirstByTransactionReference(request.getTransactionReference())
                     .ifPresent(existing -> {
-                        throw new IllegalStateException(
+                        throw new DuplicateResourceException(
                                 "Un paiement avec la référence de transaction '" + request.getTransactionReference()
                                         + "' a déjà été enregistré (paiement #" + existing.getId() + "). "
                                         + "Doublon refusé.");
@@ -89,7 +92,7 @@ public class PaymentServiceImpl implements PaymentService {
         BigDecimal newTotal = alreadyCommitted.add(request.getAmount());
         if (newTotal.compareTo(netAmountDue) > 0) {
             BigDecimal remaining = netAmountDue.subtract(alreadyCommitted);
-            throw new IllegalArgumentException(
+            throw new InvalidRequestException(
                     "Ce paiement de " + request.getAmount() + " dépasse le montant restant dû sur la commande #"
                             + order.getId() + " (" + (remaining.compareTo(BigDecimal.ZERO) > 0 ? remaining : BigDecimal.ZERO)
                             + " restant sur un total net de " + netAmountDue + ").");
@@ -128,7 +131,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Paiement introuvable avec l'ID: " + paymentId));
 
         if (payment.getStatus() != PaymentStatus.PENDING) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Seul un paiement PENDING peut être confirmé (statut actuel : " + payment.getStatus() + ").");
         }
 
@@ -151,7 +154,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Paiement introuvable avec l'ID: " + paymentId));
 
         if (payment.getStatus() != PaymentStatus.PENDING) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Seul un paiement PENDING peut être marqué comme échoué (statut actuel : " + payment.getStatus() + ").");
         }
 

@@ -1,9 +1,9 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
-import com.template.vivid.model.dto.ArticleCreateRequest;
+import com.template.vivid.model.payloads.responses.ApiResponse;
+import com.template.vivid.model.payloads.requests.ArticleCreateRequest;
 import com.template.vivid.model.dto.ArticleDto;
-import com.template.vivid.model.dto.ArticleUpdateRequest;
+import com.template.vivid.model.payloads.requests.ArticleUpdateRequest;
 import com.template.vivid.service.ArticleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

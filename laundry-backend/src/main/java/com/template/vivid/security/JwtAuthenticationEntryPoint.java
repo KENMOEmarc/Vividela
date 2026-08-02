@@ -1,7 +1,7 @@
 package com.template.vivid.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.template.vivid.model.dto.ApiResponse;
+import com.template.vivid.model.payloads.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

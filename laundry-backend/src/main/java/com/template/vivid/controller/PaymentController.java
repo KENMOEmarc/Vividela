@@ -1,8 +1,8 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
+import com.template.vivid.model.payloads.responses.ApiResponse;
 import com.template.vivid.model.dto.PaymentDto;
-import com.template.vivid.model.dto.PaymentRequest;
+import com.template.vivid.model.payloads.requests.PaymentRequest;
 import com.template.vivid.service.PaymentService;
 import com.template.vivid.service.UserService;
 import jakarta.validation.Valid;

@@ -1,4 +1,4 @@
-package com.template.vivid.model.requests;
+package com.template.vivid.model.payloads.requests;
 
 import com.template.vivid.model.enums.ArticleStatus;
 import com.template.vivid.model.enums.ClothingType;

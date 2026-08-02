@@ -1,6 +1,10 @@
 package com.template.vivid.controller;
 
 import com.template.vivid.model.dto.*;
+import com.template.vivid.model.payloads.responses.ApiResponse;
+import com.template.vivid.model.payloads.requests.StockBatchCreateRequest;
+import com.template.vivid.model.payloads.requests.StockBatchUpdateRequest;
+import com.template.vivid.model.payloads.requests.StockConsumptionRequest;
 import com.template.vivid.security.UserDetailsServiceImpl;
 import com.template.vivid.service.StockService;
 import jakarta.validation.Valid;

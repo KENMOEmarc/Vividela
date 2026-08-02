@@ -1,9 +1,9 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
-import com.template.vivid.model.dto.AuthResponse;
-import com.template.vivid.model.dto.LoginRequest;
-import com.template.vivid.model.dto.RegisterRequest;
+import com.template.vivid.model.payloads.responses.ApiResponse;
+import com.template.vivid.model.payloads.responses.AuthResponse;
+import com.template.vivid.model.payloads.requests.LoginRequest;
+import com.template.vivid.model.payloads.requests.RegisterRequest;
 import com.template.vivid.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -1,9 +1,9 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
-import com.template.vivid.model.dto.AuthResponse;
+import com.template.vivid.model.payloads.responses.ApiResponse;
+import com.template.vivid.model.payloads.responses.AuthResponse;
 import com.template.vivid.model.dto.UserDto;
-import com.template.vivid.model.dto.UserFormRequest;
+import com.template.vivid.model.payloads.requests.UserFormRequest;
 import com.template.vivid.model.entity.User;
 import com.template.vivid.model.mapper.UserMapper;
 import com.template.vivid.repository.UserRepository;

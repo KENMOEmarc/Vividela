@@ -10,6 +10,7 @@ import com.template.vivid.model.entity.Ticket;
 import com.template.vivid.model.entity.User;
 import com.template.vivid.model.enums.TicketStatus;
 import com.template.vivid.exception.ResourceNotFoundException;
+import com.template.vivid.exception.InvalidStateTransitionException;
 import com.template.vivid.model.mapper.TicketMapper;
 import com.template.vivid.model.entity.Receipt;
 import com.template.vivid.model.mapper.UserMapper;
@@ -74,7 +75,7 @@ public class TicketServiceImpl implements TicketService {
 
         List<Article> articles = articleRepository.findByOrderId(orderId);
         if (articles.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new InvalidStateTransitionException(
                     "Impossible de générer le ticket : aucun vêtement n'a encore été enregistré pour cette commande.");
         }
 
@@ -106,14 +107,14 @@ public class TicketServiceImpl implements TicketService {
         // intégralement. Voir revue de code, règle manquante n°1 (section
         // Ticket & Reçu) — exemple explicitement cité par l'utilisateur.
         if (order.getPaymentStatus() != com.template.vivid.model.enums.PaymentStatus.COMPLETED) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Impossible de générer le reçu de la commande #" + orderId + " : elle n'a pas encore été "
                             + "payée intégralement (statut de paiement actuel : " + order.getPaymentStatus() + ").");
         }
 
         List<Article> articles = articleRepository.findByOrderId(orderId);
         if (articles.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new InvalidStateTransitionException(
                     "Impossible de générer le reçu : aucun vêtement n'a encore été enregistré pour cette commande.");
         }
 
@@ -268,13 +269,13 @@ public class TicketServiceImpl implements TicketService {
                     // une commande annulée. Voir revue de code, règle manquante
                     // n°2 (section Ticket & Reçu).
                     if (order.getStatus() == com.template.vivid.model.enums.OrderStatus.CANCELLED) {
-                        throw new IllegalStateException(
+                        throw new InvalidStateTransitionException(
                                 "Impossible de générer un ticket pour la commande #" + orderId + " : elle est annulée.");
                     }
 
                     List<Article> articles = articleRepository.findByOrderId(orderId);
                     if (articles.isEmpty()) {
-                        throw new IllegalArgumentException(
+                        throw new InvalidStateTransitionException(
                                 "Impossible de générer le ticket : aucun vêtement n'a encore été enregistré pour cette commande.");
                     }
 
@@ -308,7 +309,7 @@ public class TicketServiceImpl implements TicketService {
                 log.info("Ticket {} de la commande {} marqué EXPIRED (délai de validité dépassé)",
                         ticket.getId(), ticket.getOrder().getId());
             }
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Ce ticket a expiré (délai de retrait dépassé). Contactez le personnel de la boutique.");
         }
 

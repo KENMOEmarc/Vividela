@@ -1,4 +1,4 @@
-package com.template.vivid.model.requests;
+package com.template.vivid.model.payloads.requests;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;

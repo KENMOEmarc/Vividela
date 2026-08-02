@@ -1,8 +1,8 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
+import com.template.vivid.model.payloads.responses.ApiResponse;
 import com.template.vivid.model.dto.FeedbackDto;
-import com.template.vivid.model.dto.FeedbackSubmitRequest;
+import com.template.vivid.model.payloads.requests.FeedbackSubmitRequest;
 import com.template.vivid.service.FeedbackService;
 import com.template.vivid.service.UserService;
 import jakarta.validation.Valid;

@@ -1,11 +1,13 @@
 package com.template.vivid.service.impl;
 
 import com.template.vivid.exception.ResourceNotFoundException;
-import com.template.vivid.model.dto.ArticleCreateRequest;
-import com.template.vivid.model.dto.DepositRequest;
-import com.template.vivid.model.dto.OrderCreateRequest;
+import com.template.vivid.exception.InvalidRequestException;
+import com.template.vivid.exception.InvalidStateTransitionException;
+import com.template.vivid.model.payloads.requests.ArticleCreateRequest;
+import com.template.vivid.model.payloads.requests.DepositRequest;
+import com.template.vivid.model.payloads.requests.OrderCreateRequest;
 import com.template.vivid.model.dto.OrderDto;
-import com.template.vivid.model.dto.OrderUpdateRequest;
+import com.template.vivid.model.payloads.requests.OrderUpdateRequest;
 import com.template.vivid.model.entity.Article;
 import com.template.vivid.model.entity.ArticleServiceLine;
 import com.template.vivid.model.entity.Feedback;
@@ -91,7 +93,7 @@ public class OrderServiceImpl implements OrderService {
         // donc toute remise à la création serait nécessairement supérieure au
         // total. Voir revue de code, règle manquante n°14.
         if (discountAmount.compareTo(BigDecimal.ZERO) > 0) {
-            throw new IllegalArgumentException(
+            throw new InvalidRequestException(
                     "Impossible d'appliquer une remise à la création de la commande : aucune prestation n'a "
                             + "encore été ajoutée (montant total = 0). Ajoutez d'abord les articles, puis appliquez "
                             + "la remise via la mise à jour de la commande.");
@@ -179,7 +181,7 @@ public class OrderServiceImpl implements OrderService {
                         || request.getLoyaltyPointsUsed() != null;
 
         if (orderLocked && triesToModifyProtectedFields) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "La commande #" + id + " ne peut plus être modifiée : elle est "
                             + lockedReason(previousStatus, previousPaymentStatus) + ". "
                             + "Seul le statut de paiement (ex : remboursement) reste modifiable.");
@@ -204,8 +206,8 @@ public class OrderServiceImpl implements OrderService {
         // transitions vers DELIVERED ou CANCELLED sont permises ; une fois
         // DELIVERED ou CANCELLED, le statut ne peut plus jamais changer.
         if (request.getStatus() != null) {
-            if (previousStatus == OrderStatus.DELIVERED || previousStatus == OrderStatus.CANCELLED) {
-                throw new IllegalStateException(
+                if (previousStatus == OrderStatus.DELIVERED || previousStatus == OrderStatus.CANCELLED) {
+                throw new InvalidStateTransitionException(
                         "La commande #" + id + " est " + (previousStatus == OrderStatus.DELIVERED ? "livrée" : "annulée")
                                 + " : son statut est définitif et ne peut plus être modifié.");
             } else if (previousStatus == OrderStatus.READY) {
@@ -215,12 +217,12 @@ public class OrderServiceImpl implements OrderService {
                         order.setDeliveredAt(LocalDate.now());
                     }
                 } else {
-                    throw new IllegalStateException(
+                    throw new InvalidStateTransitionException(
                             "Depuis le statut READY, seules les transitions vers DELIVERED (remise au client) "
                                     + "ou CANCELLED (annulation) sont autorisées pour la commande #" + id + ".");
                 }
             } else {
-                throw new IllegalStateException(
+                throw new InvalidStateTransitionException(
                         "Le statut de la commande #" + id + " est géré automatiquement en fonction de "
                                 + "l'avancement de ses articles tant qu'elle n'a pas atteint le stade READY. "
                                 + "Statut actuel : " + previousStatus + ". Pour annuler la commande avant ce "
@@ -234,7 +236,7 @@ public class OrderServiceImpl implements OrderService {
         // couvre le montant net dû. Voir revue de code, règle manquante n°2.
         if (request.getPaymentStatus() != null) {
             if (request.getPaymentStatus() == PaymentStatus.COMPLETED) {
-                throw new IllegalStateException(
+                throw new InvalidStateTransitionException(
                         "Le statut de paiement COMPLETED ne peut plus être positionné manuellement : il est "
                                 + "déterminé automatiquement lorsque la somme des paiements confirmés couvre le "
                                 + "montant net dû de la commande (voir /payments/{id}/confirm).");
@@ -252,7 +254,7 @@ public class OrderServiceImpl implements OrderService {
             // AJOUT : la remise ne peut pas dépasser le montant total. Voir
             // revue de code, règle manquante n°14 bis.
             if (request.getDiscountAmount().compareTo(order.getTotalAmount()) > 0) {
-                throw new IllegalArgumentException(
+                throw new InvalidRequestException(
                         "La remise (" + request.getDiscountAmount() + ") ne peut pas dépasser le montant total "
                                 + "de la commande (" + order.getTotalAmount() + ").");
             }
@@ -298,11 +300,11 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Commande introuvable: " + id));
 
         if (order.getStatus() == OrderStatus.DELIVERED) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Impossible d'annuler la commande #" + id + " : elle a déjà été livrée au client.");
         }
         if (order.getStatus() == OrderStatus.CANCELLED) {
-            throw new IllegalStateException("La commande #" + id + " est déjà annulée.");
+            throw new InvalidStateTransitionException("La commande #" + id + " est déjà annulée.");
         }
 
         OrderStatus previousStatus = order.getStatus();
@@ -323,7 +325,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Commande introuvable: " + id));
 
         if (o.getPaymentStatus() == PaymentStatus.COMPLETED) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Impossible de supprimer la commande #" + id + " : elle a déjà été payée. "
                             + "Annulez-la (statut CANCELLED) plutôt que de la supprimer, "
                             + "afin de conserver l'historique comptable.");
@@ -342,7 +344,7 @@ public class OrderServiceImpl implements OrderService {
         // d'appeler cette méthode. Voir revue de code, règle manquante n°4.
         if (order.getStatus() == OrderStatus.DELIVERED || order.getStatus() == OrderStatus.CANCELLED
                 || order.getPaymentStatus() == PaymentStatus.COMPLETED) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Impossible de recalculer le montant de la commande #" + orderId + " : elle est "
                             + lockedReason(order.getStatus(), order.getPaymentStatus()) + ".");
         }
@@ -424,7 +426,7 @@ public class OrderServiceImpl implements OrderService {
         validateDeliveryDate(depositDate, request.getExpectedDeliveryDate());
 
         if (request.getArticles() == null || request.getArticles().isEmpty()) {
-            throw new IllegalArgumentException("Le dépôt doit contenir au moins un vêtement.");
+            throw new InvalidRequestException("Le dépôt doit contenir au moins un vêtement.");
         }
 
         Order order = Order.builder()
@@ -525,7 +527,7 @@ public class OrderServiceImpl implements OrderService {
         }
         int balance = customer.getLoyaltyPoints() != null ? customer.getLoyaltyPoints() : 0;
         if (pointsUsed > balance) {
-            throw new IllegalArgumentException(
+            throw new InvalidRequestException(
                     "Le client ne dispose que de " + balance + " point(s) de fidélité, "
                             + "impossible d'en utiliser " + pointsUsed + ".");
         }
@@ -543,7 +545,7 @@ public class OrderServiceImpl implements OrderService {
 
     private void validateDeliveryDate(LocalDate depositDate, LocalDate expectedDeliveryDate) {
         if (depositDate != null && expectedDeliveryDate != null && expectedDeliveryDate.isBefore(depositDate)) {
-            throw new IllegalArgumentException(
+            throw new InvalidRequestException(
                     "La date de livraison prévue (" + expectedDeliveryDate + ") ne peut pas être antérieure "
                             + "à la date de dépôt (" + depositDate + ").");
         }
