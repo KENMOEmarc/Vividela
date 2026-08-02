@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
  * Implémentation de l'envoi d'emails via JavaMailSender (SMTP).
  * <p>
  * Configuration attendue (variables d'environnement, voir application.yml) :
- *   MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM
+ * MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM
  * <p>
  * Si aucune configuration SMTP n'est fournie (MAIL_USERNAME vide), l'envoi
  * est simplement loggé plutôt que réellement transmis — utile en

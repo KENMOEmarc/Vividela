@@ -13,9 +13,13 @@ import java.util.concurrent.CompletableFuture;
 
 public interface NotificationService {
     void notifyOrderCreated(Order order, Ticket ticket);
+
     void notifyTicketGenerated(Order order, Ticket ticket);
+
     void notifyAllArticlesSameState(Order order, String stateLabel);
+
     void notifyAllArticlesReady(Order order);
+
     void notifyPaymentReceived(Order order, Payment payment);
 
     /**
@@ -40,16 +44,16 @@ public interface NotificationService {
      * (IN_APP, puis email si applicable) est envoyé sur sa propre
      * {@link CompletableFuture}, exécutée sur un pool dédié, sans bloquer le
      * thread appelant.
-     *
+     * <p>
      * Comportement :
-     *  - Tout changement de statut déclenche toujours une notification IN_APP.
-     *  - Si le nouveau statut correspond à une commande "terminée" (READY) ou
-     *    "livrée" (DELIVERED), le client reçoit en plus un email.
-     *  - Aucune notification n'est envoyée si le statut n'a pas changé.
+     * - Tout changement de statut déclenche toujours une notification IN_APP.
+     * - Si le nouveau statut correspond à une commande "terminée" (READY) ou
+     * "livrée" (DELIVERED), le client reçoit en plus un email.
+     * - Aucune notification n'est envoyée si le statut n'a pas changé.
      *
      * @return une CompletableFuture qui se termine une fois tous les canaux
-     *         concernés envoyés (utile pour les tests ; l'appelant de
-     *         production peut l'ignorer, l'envoi étant asynchrone).
+     * concernés envoyés (utile pour les tests ; l'appelant de
+     * production peut l'ignorer, l'envoi étant asynchrone).
      */
     CompletableFuture<Void> notifyOrderStatusChangedAsync(Order order, OrderStatus previousStatus, OrderStatus newStatus);
 
@@ -60,7 +64,7 @@ public interface NotificationService {
      * nouveau statut de paiement) doit déjà avoir eu lieu avant l'appel, et
      * chaque canal (IN_APP puis email) est envoyé via sa propre
      * {@link CompletableFuture} sur un pool dédié.
-     *
+     * <p>
      * Seule la transition VERS PaymentStatus.COMPLETED déclenche une
      * notification ; les autres transitions (PENDING, FAILED, REFUNDED) n'en
      * déclenchent pas ici.

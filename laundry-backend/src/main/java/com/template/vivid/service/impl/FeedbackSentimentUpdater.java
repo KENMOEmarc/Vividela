@@ -31,11 +31,11 @@ public class FeedbackSentimentUpdater {
 
     /**
      * @return le {@link Feedback} mis à jour, avec {@code order} et
-     *         {@code order.clientUser} déjà chargés (JOIN FETCH), prêt à être
-     *         utilisé pour construire les notifications même après la fin de
-     *         cette transaction (voir FeedbackRepository#findByIdWithOrderAndClient) ;
-     *         {@code null} si le feedback a été supprimé entre-temps (cas
-     *         limite, ne devrait pas arriver en pratique).
+     * {@code order.clientUser} déjà chargés (JOIN FETCH), prêt à être
+     * utilisé pour construire les notifications même après la fin de
+     * cette transaction (voir FeedbackRepository#findByIdWithOrderAndClient) ;
+     * {@code null} si le feedback a été supprimé entre-temps (cas
+     * limite, ne devrait pas arriver en pratique).
      */
     @Transactional
     public Feedback applyAnalysis(Long feedbackId, ReviewAnalysisService.ReviewAnalysisResult result) {

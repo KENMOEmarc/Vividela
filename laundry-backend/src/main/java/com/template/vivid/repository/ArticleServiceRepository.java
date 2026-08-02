@@ -68,5 +68,5 @@ public interface ArticleServiceRepository extends JpaRepository<ArticleServiceLi
      */
     @Query("SELECT COUNT(asv) > 0 FROM ArticleServiceLine asv WHERE asv.article.clothingType = :clothingType AND asv.service = :service")
     boolean existsByClothingTypeAndService(@Param("clothingType") com.template.vivid.model.enums.ClothingType clothingType,
-                                            @Param("service") com.template.vivid.model.enums.ServiceType service);
+                                           @Param("service") com.template.vivid.model.enums.ServiceType service);
 }

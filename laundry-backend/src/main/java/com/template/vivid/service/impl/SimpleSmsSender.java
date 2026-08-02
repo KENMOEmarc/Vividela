@@ -15,12 +15,12 @@ import org.springframework.stereotype.Component;
  * <p>
  * Twilio propose un compte d'essai (trial) gratuit : https://www.twilio.com/try-twilio
  * En mode trial :
- *   - un numéro Twilio gratuit est fourni (TWILIO_FROM_NUMBER)
- *   - les SMS ne peuvent être envoyés qu'à des numéros vérifiés dans la console Twilio
- *   - chaque SMS est préfixé automatiquement par "Sent from your Twilio trial account"
+ * - un numéro Twilio gratuit est fourni (TWILIO_FROM_NUMBER)
+ * - les SMS ne peuvent être envoyés qu'à des numéros vérifiés dans la console Twilio
+ * - chaque SMS est préfixé automatiquement par "Sent from your Twilio trial account"
  * <p>
  * Configuration attendue (voir application.yml) :
- *   TWILIO_ENABLED=true, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER
+ * TWILIO_ENABLED=true, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER
  * <p>
  * Si TWILIO_ENABLED=false (ou credentials manquants), l'envoi est simplement
  * loggué — utile en développement local sans compte Twilio.

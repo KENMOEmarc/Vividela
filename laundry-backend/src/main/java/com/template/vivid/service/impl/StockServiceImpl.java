@@ -5,6 +5,9 @@ import com.template.vivid.model.entity.*;
 import com.template.vivid.model.enums.MovementType;
 import com.template.vivid.model.enums.RegistrationType;
 import com.template.vivid.model.mapper.StockMapper;
+import com.template.vivid.model.payloads.requests.StockBatchCreateRequest;
+import com.template.vivid.model.payloads.requests.StockBatchUpdateRequest;
+import com.template.vivid.model.payloads.requests.StockConsumptionRequest;
 import com.template.vivid.repository.*;
 import com.template.vivid.service.NotificationService;
 import com.template.vivid.service.StockService;
@@ -20,6 +23,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.template.vivid.exception.ResourceNotFoundException;
+import com.template.vivid.exception.InvalidRequestException;
+import com.template.vivid.exception.InvalidStateTransitionException;
+import com.template.vivid.exception.InsufficientStockException;
 
 /**
  * Gère le stock d'un produit, désormais réparti sur PLUSIEURS lots (Stock)
@@ -34,12 +41,12 @@ import java.util.stream.Collectors;
 @Transactional
 public class StockServiceImpl implements StockService {
 
-    private final StockRepository               stockRepository;
-    private final StockMovementRepository       stockMovementRepository;
+    private final StockRepository stockRepository;
+    private final StockMovementRepository stockMovementRepository;
     private final ProductRegistrationRepository productRegistrationRepository;
-    private final ProductRepository             productRepository;
-    private final UserRepository                userRepository;
-    private final NotificationService            notificationService;
+    private final ProductRepository productRepository;
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     // ─────────────────────────────────── READ ────────────────────────────────
 
@@ -56,7 +63,7 @@ public class StockServiceImpl implements StockService {
     @Transactional(readOnly = true)
     public StockDto getStockByProductId(Long productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Produit introuvable avec l'ID: " + productId));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'ID: " + productId));
         List<Stock> batches = stockRepository.findByProductIdOrderByExpirationFefo(productId);
         return StockMapper.toAggregatedDto(product, batches, true);
     }
@@ -113,16 +120,16 @@ public class StockServiceImpl implements StockService {
     @Override
     public StockBatchDto createBatch(Long currentUserId, StockBatchCreateRequest request) {
         Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new IllegalArgumentException("Produit introuvable: " + request.getProductId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable: " + request.getProductId()));
         User user = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable"));
 
         if (request.getQuantity() == null || request.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("La quantité du lot doit être strictement positive.");
+            throw new InvalidRequestException("La quantité du lot doit être strictement positive.");
         }
         if (request.getExpirationDate() != null && request.getEntryDate() != null
                 && request.getExpirationDate().isBefore(request.getEntryDate())) {
-            throw new IllegalArgumentException("La date d'expiration ne peut pas être antérieure à la date d'entrée en stock.");
+            throw new InvalidRequestException("La date d'expiration ne peut pas être antérieure à la date d'entrée en stock.");
         }
 
         BigDecimal previousTotal = stockRepository.sumQuantityByProductId(product.getId());
@@ -149,17 +156,17 @@ public class StockServiceImpl implements StockService {
     @Override
     public StockBatchDto updateBatch(Long currentUserId, Long batchId, StockBatchUpdateRequest request) {
         Stock batch = stockRepository.findById(batchId)
-                .orElseThrow(() -> new IllegalArgumentException("Lot de stock introuvable: " + batchId));
+                .orElseThrow(() -> new ResourceNotFoundException("Lot de stock introuvable: " + batchId));
         User user = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable"));
         Product product = batch.getProduct();
 
         if (request.getQuantity() == null || request.getQuantity().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("La quantité doit être positive ou nulle.");
+            throw new InvalidRequestException("La quantité doit être positive ou nulle.");
         }
         if (request.getExpirationDate() != null && request.getEntryDate() != null
                 && request.getExpirationDate().isBefore(request.getEntryDate())) {
-            throw new IllegalArgumentException("La date d'expiration ne peut pas être antérieure à la date d'entrée en stock.");
+            throw new InvalidRequestException("La date d'expiration ne peut pas être antérieure à la date d'entrée en stock.");
         }
 
         BigDecimal previousTotal = stockRepository.sumQuantityByProductId(product.getId());
@@ -191,15 +198,15 @@ public class StockServiceImpl implements StockService {
     @Override
     public void deleteBatch(Long currentUserId, Long batchId) {
         Stock batch = stockRepository.findById(batchId)
-                .orElseThrow(() -> new IllegalArgumentException("Lot de stock introuvable: " + batchId));
+                .orElseThrow(() -> new ResourceNotFoundException("Lot de stock introuvable: " + batchId));
 
         if (batch.getCurrentQuantity() != null && batch.getCurrentQuantity().compareTo(BigDecimal.ZERO) != 0) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Impossible de supprimer ce lot : sa quantité restante n'est pas à zéro ("
                             + batch.getCurrentQuantity() + "). Consommez ou ajustez le lot à zéro avant de le supprimer.");
         }
         if (stockMovementRepository.existsByStockId(batchId)) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Impossible de supprimer ce lot : il possède un historique de mouvements. "
                             + "Sa traçabilité doit être conservée.");
         }
@@ -211,13 +218,13 @@ public class StockServiceImpl implements StockService {
     @Override
     public StockDto consume(Long currentUserId, StockConsumptionRequest request) {
         Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new IllegalArgumentException("Produit introuvable: " + request.getProductId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable: " + request.getProductId()));
         User user = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable"));
 
         BigDecimal quantityToConsume = request.getQuantity();
         if (quantityToConsume == null || quantityToConsume.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("La quantité consommée doit être strictement positive.");
+            throw new InvalidRequestException("La quantité consommée doit être strictement positive.");
         }
 
         List<Stock> batches = stockRepository.findByProductIdOrderByExpirationFefo(product.getId());
@@ -227,7 +234,7 @@ public class StockServiceImpl implements StockService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         if (previousTotal.compareTo(quantityToConsume) < 0) {
-            throw new IllegalArgumentException(
+            throw new InsufficientStockException(
                     "Stock insuffisant. Disponible: " + previousTotal + ", demandé: " + quantityToConsume);
         }
 

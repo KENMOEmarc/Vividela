@@ -1,15 +1,15 @@
 package com.template.vivid.service;
 
-import com.template.vivid.model.dto.ProductCreateRequest;
+import com.template.vivid.model.payloads.requests.ProductCreateRequest;
 import com.template.vivid.model.dto.ProductDto;
-import com.template.vivid.model.dto.ProductUpdateRequest;
+import com.template.vivid.model.payloads.requests.ProductUpdateRequest;
 import com.template.vivid.model.entity.Product;
 
 import java.util.List;
 
 /**
  * Service interface for Product CRUD operations
- *
+ * <p>
  * Business Rules:
  * - ADMIN: can perform all operations
  * - EMPLOYEE: can create and update products

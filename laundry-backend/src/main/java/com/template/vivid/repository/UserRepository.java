@@ -10,41 +10,41 @@ import java.util.Optional;
 
 /**
  * Repository JPA pour l'entité User.
- *
+ * <p>
  * SPRING DATA JPA :
- *   En étendant JpaRepository<User, Long>, Spring génère automatiquement
- *   au runtime une implémentation complète avec :
- *
- *   CRUD de base fourni automatiquement :
- *   ┌──────────────────────────────────────────────────────────┐
- *   │  save(user)           → INSERT ou UPDATE (selon l'id)   │
- *   │  findById(id)         → SELECT WHERE id = ?             │
- *   │  findAll()            → SELECT * FROM users             │
- *   │  deleteById(id)       → DELETE WHERE id = ?             │
- *   │  count()              → SELECT COUNT(*) FROM users      │
- *   │  existsById(id)       → SELECT 1 WHERE id = ?          │
- *   └──────────────────────────────────────────────────────────┘
- *
+ * En étendant JpaRepository<User, Long>, Spring génère automatiquement
+ * au runtime une implémentation complète avec :
+ * <p>
+ * CRUD de base fourni automatiquement :
+ * ┌──────────────────────────────────────────────────────────┐
+ * │  save(user)           → INSERT ou UPDATE (selon l'id)   │
+ * │  findById(id)         → SELECT WHERE id = ?             │
+ * │  findAll()            → SELECT * FROM users             │
+ * │  deleteById(id)       → DELETE WHERE id = ?             │
+ * │  count()              → SELECT COUNT(*) FROM users      │
+ * │  existsById(id)       → SELECT 1 WHERE id = ?          │
+ * └──────────────────────────────────────────────────────────┘
+ * <p>
  * MÉTHODES DÉRIVÉES (Query by method name) :
- *   Spring Data interprète le nom de la méthode et génère la requête SQL.
- *   Ex: findByEmail → SELECT * FROM users WHERE email = ?
- *
+ * Spring Data interprète le nom de la méthode et génère la requête SQL.
+ * Ex: findByEmail → SELECT * FROM users WHERE email = ?
+ * <p>
  * JPQL (@Query) :
- *   Pour les requêtes complexes non dérivables du nom, on écrit du JPQL
- *   (Java Persistence Query Language) qui opère sur les entités, pas les tables.
+ * Pour les requêtes complexes non dérivables du nom, on écrit du JPQL
+ * (Java Persistence Query Language) qui opère sur les entités, pas les tables.
  *
  * @Repository : marque ce composant comme couche d'accès aux données.
- *   Spring traduit les exceptions JPA en DataAccessException standardisées.
+ * Spring traduit les exceptions JPA en DataAccessException standardisées.
  */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
      * Recherche un utilisateur par son email (insensible à la casse).
-     *
+     * <p>
      * JPQL généré :
-     *   SELECT u FROM User u WHERE LOWER(u.email) = LOWER(:email)
-     *
+     * SELECT u FROM User u WHERE LOWER(u.email) = LOWER(:email)
+     * <p>
      * Optional<T> : évite les NullPointerException. Le code appelant
      * doit explicitement gérer le cas "utilisateur non trouvé".
      */
@@ -68,7 +68,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
      * Recherche flexible : accepte email OU username comme identifiant.
-     *
+     * <p>
      * Utilisé lors de la connexion pour permettre à l'utilisateur de
      * s'authentifier avec l'un ou l'autre.
      *
@@ -76,10 +76,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * exprimée par un simple nom de méthode.
      */
     @Query("""
-        SELECT u FROM User u
-        WHERE LOWER(u.email) = LOWER(:identifier)
-           OR LOWER(u.userName) = LOWER(:identifier)
-        """)
+            SELECT u FROM User u
+            WHERE LOWER(u.email) = LOWER(:identifier)
+               OR LOWER(u.userName) = LOWER(:identifier)
+            """)
     Optional<User> findByEmailOrUserNameIgnoreCase(@Param("identifier") String identifier);
 
     /**

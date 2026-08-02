@@ -1,22 +1,22 @@
 package com.template.vivid.service;
 
-import com.template.vivid.model.dto.AuthResponse;
-import com.template.vivid.model.dto.LoginRequest;
-import com.template.vivid.model.dto.RegisterRequest;
+import com.template.vivid.model.payloads.responses.AuthResponse;
+import com.template.vivid.model.payloads.requests.LoginRequest;
+import com.template.vivid.model.payloads.requests.RegisterRequest;
 
 /**
  * Interface du service d'authentification.
- *
+ * <p>
  * Orchestre les opérations d'inscription et de connexion en combinant :
- *   - UserService    (logique métier utilisateur)
- *   - JwtTokenProvider (génération/validation de tokens)
- *   - TokenBlacklistService (révocation de tokens via table MySQL revoked_tokens)
+ * - UserService    (logique métier utilisateur)
+ * - JwtTokenProvider (génération/validation de tokens)
+ * - TokenBlacklistService (révocation de tokens via table MySQL revoked_tokens)
  */
 public interface AuthService {
 
     /**
      * Inscription + connexion automatique.
-     *
+     * <p>
      * Crée l'utilisateur ET génère immédiatement un token JWT
      * pour éviter à l'utilisateur de se reconnecter après l'inscription.
      *
@@ -36,7 +36,7 @@ public interface AuthService {
 
     /**
      * Déconnexion : révoque le token JWT courant dans la table revoked_tokens.
-     *
+     * <p>
      * Le token est ajouté à la blacklist avec une date d'expiration égale à
      * sa durée de vie restante. Ainsi, même si quelqu'un possède
      * un token volé, il ne peut plus l'utiliser après déconnexion.

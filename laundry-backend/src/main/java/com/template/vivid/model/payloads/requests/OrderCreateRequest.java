@@ -1,18 +1,21 @@
-package com.template.vivid.model.dto;
+package com.template.vivid.model.payloads.requests;
 
-import com.template.vivid.model.enums.OrderStatus;
-import com.template.vivid.model.enums.PaymentStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * DTO de création/mise à jour d'une commande.
+ * Le client est résolu via userName (findByUserNameIgnoreCase en base).
+ */
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderUpdateRequest {
+public class OrderCreateRequest {
+
     /** Username du client — résolu en User par OrderServiceImpl */
     private String userName;
 
@@ -23,13 +26,7 @@ public class OrderUpdateRequest {
      */
     private String phone;
 
-    private LocalDate depositDate;
-
     private LocalDate expectedDeliveryDate;
-
-    private OrderStatus status;
-
-    private PaymentStatus paymentStatus;
 
     private BigDecimal discountAmount;
 

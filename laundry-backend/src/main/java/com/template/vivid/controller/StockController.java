@@ -1,6 +1,10 @@
 package com.template.vivid.controller;
 
 import com.template.vivid.model.dto.*;
+import com.template.vivid.model.payloads.responses.ApiResponse;
+import com.template.vivid.model.payloads.requests.StockBatchCreateRequest;
+import com.template.vivid.model.payloads.requests.StockBatchUpdateRequest;
+import com.template.vivid.model.payloads.requests.StockConsumptionRequest;
 import com.template.vivid.security.UserDetailsServiceImpl;
 import com.template.vivid.service.StockService;
 import jakarta.validation.Valid;
@@ -16,26 +20,26 @@ import java.util.List;
 
 /**
  * REST Controller — Gestion du Stock
- *
+ * <p>
  * Base URL: /api/stock
- *
+ * <p>
  * Un produit peut posséder PLUSIEURS lots de stock (batches), chacun avec sa
  * propre quantité, son prix d'achat, sa date d'entrée en stock et sa date
  * d'expiration.
- *
+ * <p>
  * Endpoints:
- *   GET    /api/stock                          → vue agrégée (totaux) de tous les produits
- *   GET    /api/stock/low                      → produits en alerte (total sous le seuil)
- *   GET    /api/stock/product/{productId}      → vue agrégée d'un produit + détail des lots
- *   GET    /api/stock/product/{productId}/batches → liste des lots d'un produit
- *   POST   /api/stock/batches                  → créer un nouveau lot (réapprovisionnement)
- *   PUT    /api/stock/batches/{batchId}        → corriger un lot existant
- *   DELETE /api/stock/batches/{batchId}        → supprimer un lot (quantité nulle uniquement)
- *   POST   /api/stock/consume                  → consommer du stock (réparti en FEFO)
- *   GET    /api/stock/expiring?days=7          → lots expirant bientôt
- *   GET    /api/stock/movements/{productId}    → historique mouvements
- *   GET    /api/stock/registrations            → tous les enregistrements
- *   GET    /api/stock/registrations/{productId} → enregistrements par produit
+ * GET    /api/stock                          → vue agrégée (totaux) de tous les produits
+ * GET    /api/stock/low                      → produits en alerte (total sous le seuil)
+ * GET    /api/stock/product/{productId}      → vue agrégée d'un produit + détail des lots
+ * GET    /api/stock/product/{productId}/batches → liste des lots d'un produit
+ * POST   /api/stock/batches                  → créer un nouveau lot (réapprovisionnement)
+ * PUT    /api/stock/batches/{batchId}        → corriger un lot existant
+ * DELETE /api/stock/batches/{batchId}        → supprimer un lot (quantité nulle uniquement)
+ * POST   /api/stock/consume                  → consommer du stock (réparti en FEFO)
+ * GET    /api/stock/expiring?days=7          → lots expirant bientôt
+ * GET    /api/stock/movements/{productId}    → historique mouvements
+ * GET    /api/stock/registrations            → tous les enregistrements
+ * GET    /api/stock/registrations/{productId} → enregistrements par produit
  */
 @Slf4j
 @RestController

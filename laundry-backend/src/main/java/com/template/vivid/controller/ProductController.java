@@ -1,9 +1,9 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
-import com.template.vivid.model.dto.ProductCreateRequest;
+import com.template.vivid.model.payloads.responses.ApiResponse;
+import com.template.vivid.model.payloads.requests.ProductCreateRequest;
 import com.template.vivid.model.dto.ProductDto;
-import com.template.vivid.model.dto.ProductUpdateRequest;
+import com.template.vivid.model.payloads.requests.ProductUpdateRequest;
 import com.template.vivid.model.entity.Product;
 import com.template.vivid.service.ProductService;
 import jakarta.validation.Valid;
@@ -20,14 +20,14 @@ import java.util.List;
 
 /**
  * REST Controller for Product CRUD operations.
- *
+ * <p>
  * Base URL: /api/products
- *
+ * <p>
  * Security Rules:
  * - ADMIN:    Full CRUD access
  * - EMPLOYEE: Can create and update products
  * - CUSTOMER: No direct product management (catalog via orders only)
- *
+ * <p>
  * BUGFIX : tous les try/catch locaux capturant IllegalArgumentException ont été
  * supprimés — GlobalExceptionHandler (handleIllegalArgument) centralise désormais
  * ce cas et retourne un 400 uniforme, évitant la duplication de code.

@@ -1,9 +1,9 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
-import com.template.vivid.model.dto.ServicePriceCreateRequest;
+import com.template.vivid.model.payloads.responses.ApiResponse;
+import com.template.vivid.model.payloads.requests.ServicePriceCreateRequest;
 import com.template.vivid.model.dto.ServicePriceDto;
-import com.template.vivid.model.dto.ServicePriceUpdateRequest;
+import com.template.vivid.model.payloads.requests.ServicePriceUpdateRequest;
 import com.template.vivid.service.ServicePriceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +20,9 @@ import java.util.List;
 /**
  * Contrôleur REST pour les tarifs de service (prix des services proposés,
  * par type de vêtement + type de service).
- *
+ * <p>
  * URL de base : /service-prices
- *
+ * <p>
  * Règles de sécurité :
  * - Lecture   : ADMIN, MANAGER, EMPLOYEE
  * - Création / modification (ajout des prix) : ADMIN, MANAGER uniquement

@@ -122,7 +122,9 @@ public final class TicketPdfGenerator {
         }
     }
 
-    /** Ajoute l'image du code-barres suivie de sa valeur textuelle, centrées. */
+    /**
+     * Ajoute l'image du code-barres suivie de sa valeur textuelle, centrées.
+     */
     private static void addBarcode(Document document, PdfWriter writer, String code, Font codeFont) throws DocumentException {
         Barcode128 barcode128 = new Barcode128();
         barcode128.setCode(code);

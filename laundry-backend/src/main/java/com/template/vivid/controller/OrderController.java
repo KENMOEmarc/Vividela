@@ -2,6 +2,8 @@ package com.template.vivid.controller;
 
 import com.template.vivid.model.dto.*;
 import com.template.vivid.model.enums.OrderStatus;
+import com.template.vivid.model.payloads.requests.*;
+import com.template.vivid.model.payloads.responses.ApiResponse;
 import com.template.vivid.service.ArticleService;
 import com.template.vivid.service.OrderService;
 import com.template.vivid.service.UserService;
@@ -18,13 +20,13 @@ import java.util.List;
 
 /**
  * Contrôleur REST pour les commandes.
- *
+ * <p>
  * URL de base : /orders  (le préfixe /api est défini dans application.yml via context-path)
- *
+ * <p>
  * CORRECTION : suppression du préfixe "/api/" dans @RequestMapping car
  * context-path=/api dans application.yml l'ajoute déjà automatiquement.
  * L'ancienne valeur "/api/orders" produisait l'URL "/api/api/orders" (double préfixe).
- *
+ * <p>
  * BUGFIX SÉCURITÉ : aucun de ces endpoints n'était protégé par @PreAuthorize.
  * Conséquence : N'IMPORTE QUEL utilisateur authentifié, y compris un simple
  * CUSTOMER, pouvait lister TOUTES les commandes de TOUS les clients, consulter
@@ -40,9 +42,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderController {
 
-    private final OrderService   orderService;
+    private final OrderService orderService;
     private final ArticleService articleService;
-    private final UserService    userService;
+    private final UserService userService;
 
     // ── ORDERS ─────────────────────────────────────────────────────────────
 
@@ -71,12 +73,12 @@ public class OrderController {
 
     /**
      * GET /orders  – liste les commandes, avec filtrage optionnel par statut(s).
-     *
+     * <p>
      * Exemples :
-     *   GET /orders                                → toutes les commandes
-     *   GET /orders?status=PENDING                  → un seul statut
-     *   GET /orders?status=PENDING,IN_PROGRESS,READY → plusieurs statuts (checkboxs)
-     *
+     * GET /orders                                → toutes les commandes
+     * GET /orders?status=PENDING                  → un seul statut
+     * GET /orders?status=PENDING,IN_PROGRESS,READY → plusieurs statuts (checkboxs)
+     * <p>
      * AJOUT : filtrage côté serveur par statut pour l'écran "commandes en cours"
      * (cartes + checkboxs de filtre côté frontend).
      */
@@ -174,7 +176,7 @@ public class OrderController {
     /**
      * GET /orders/{id}/items  – récupère la commande avec ses articles.
      * Enveloppe dans ApiResponse pour la cohérence avec le reste de l'API.
-     *
+     * <p>
      * CORRECTION : la réponse est maintenant wrappée dans ApiResponse<OrderDto>
      * au lieu de retourner OrderDto brut.
      */
@@ -188,11 +190,11 @@ public class OrderController {
 
     /**
      * GET /orders/{orderId}/articles  – alias de /items pour compatibilité frontend.
-     *
+     * <p>
      * CORRECTION BUG : le frontend appelait /orders/{id}/articles (méthode getOrderArticles)
      * mais le backend n'exposait que /orders/{id}/items → 404.
      * Cet alias résout le problème sans casser l'existant.
-     *
+     * <p>
      * ÉVOLUTION : accessible aussi au CUSTOMER, mais uniquement pour consulter les
      * articles de SES PROPRES commandes (vérifié via clientUserId), afin d'afficher
      * le suivi des articles dans le dashboard client.
@@ -230,7 +232,7 @@ public class OrderController {
 
     /**
      * POST /orders/{orderId}/items  – ajoute un article à une commande.
-     *
+     * <p>
      * CORRECTION : la réponse est maintenant wrappée dans ApiResponse<ArticleDto>.
      */
     @PostMapping("/{orderId}/items")
@@ -246,7 +248,7 @@ public class OrderController {
 
     /**
      * PUT /orders/{orderId}/items/{itemId}  – met à jour un article d'une commande.
-     *
+     * <p>
      * CORRECTION : la réponse est maintenant wrappée dans ApiResponse<ArticleDto>.
      */
     @PutMapping("/{orderId}/items/{itemId}")
@@ -262,7 +264,7 @@ public class OrderController {
 
     /**
      * DELETE /orders/{orderId}/items/{itemId}  – supprime un article d'une commande.
-     *
+     * <p>
      * CORRECTION : retourne 200 + ApiResponse au lieu de 204 vide,
      * pour être cohérent avec le reste de l'API.
      */
@@ -291,16 +293,16 @@ public class OrderController {
      */
     /**
      * Résout l'ID de l'utilisateur connecté depuis le contexte de sécurité.
-     *
+     * <p>
      * CORRECTION : UserDetailsServiceImpl retourne un Spring Security User
      * (org.springframework.security.core.userdetails.User), pas l'entité JPA.
      * On résout l'ID via le username (= email) en base de données.
      *
-     * @param userDetails  injecté par Spring Security via @AuthenticationPrincipal
+     * @param userDetails injecté par Spring Security via @AuthenticationPrincipal
      * @return ID de l'utilisateur connecté, ou null si non authentifié
      */
     private Long resolveUserId(UserDetails userDetails) {
-        if(userDetails == null) {
+        if (userDetails == null) {
             return null;
         }
         return userService.findByEmail(userDetails.getUsername()).getId();

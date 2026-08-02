@@ -10,6 +10,7 @@ import com.template.vivid.model.entity.Ticket;
 import com.template.vivid.model.entity.User;
 import com.template.vivid.model.enums.TicketStatus;
 import com.template.vivid.exception.ResourceNotFoundException;
+import com.template.vivid.exception.InvalidStateTransitionException;
 import com.template.vivid.model.mapper.TicketMapper;
 import com.template.vivid.model.entity.Receipt;
 import com.template.vivid.model.mapper.UserMapper;
@@ -42,14 +43,22 @@ import java.util.List;
 @Transactional
 public class TicketServiceImpl implements TicketService {
 
-    private final TicketRepository           ticketRepository;
-    private final ReceiptRepository          receiptRepository;
-    private final OrderRepository            orderRepository;
-    private final ArticleRepository          articleRepository;
+    /**
+     * Nombre de tentatives en cas de collision sur la colonne UNIQUE `barcode`.
+     * Voir revue de code — "Pas de gestion de collision sur barcode/ticket_number".
+     * La colonne `barcode` est UNIQUE en base mais generateBarcode() ne
+     * vérifie jamais l'unicité au préalable ; en cas de collision (même
+     * commande + même milliseconde tronquée), on retente avec un nouveau
+     * tirage plutôt que de laisser remonter un 500 générique au client.
+     */
+    private static final int MAX_BARCODE_GENERATION_ATTEMPTS = 5;
+    private final TicketRepository ticketRepository;
+    private final ReceiptRepository receiptRepository;
+    private final OrderRepository orderRepository;
+    private final ArticleRepository articleRepository;
     private final ArticleServiceLineRepository articleServiceLineRepository;
     private final NotificationService notificationService;
     private final UserService userService;
-
     @Value("${vividela.ticket.validity-days:90}")
     private int ticketExpirationDays;
 
@@ -66,7 +75,7 @@ public class TicketServiceImpl implements TicketService {
 
         List<Article> articles = articleRepository.findByOrderId(orderId);
         if (articles.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new InvalidStateTransitionException(
                     "Impossible de générer le ticket : aucun vêtement n'a encore été enregistré pour cette commande.");
         }
 
@@ -98,14 +107,14 @@ public class TicketServiceImpl implements TicketService {
         // intégralement. Voir revue de code, règle manquante n°1 (section
         // Ticket & Reçu) — exemple explicitement cité par l'utilisateur.
         if (order.getPaymentStatus() != com.template.vivid.model.enums.PaymentStatus.COMPLETED) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Impossible de générer le reçu de la commande #" + orderId + " : elle n'a pas encore été "
                             + "payée intégralement (statut de paiement actuel : " + order.getPaymentStatus() + ").");
         }
 
         List<Article> articles = articleRepository.findByOrderId(orderId);
         if (articles.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new InvalidStateTransitionException(
                     "Impossible de générer le reçu : aucun vêtement n'a encore été enregistré pour cette commande.");
         }
 
@@ -142,7 +151,7 @@ public class TicketServiceImpl implements TicketService {
         // commande ne peuvent plus diverger. Voir revue de code, règle
         // manquante n°13.
         java.math.BigDecimal netAmountDue = computeNetAmountDue(order);
-        byte[] pdf = ReceiptPdfGenerator.generate(order, articles, allServices, reference,UserMapper.toUser(issuer), netAmountDue);
+        byte[] pdf = ReceiptPdfGenerator.generate(order, articles, allServices, reference, UserMapper.toUser(issuer), netAmountDue);
         return new GeneratedPdfDto(pdf, reference);
     }
 
@@ -203,16 +212,6 @@ public class TicketServiceImpl implements TicketService {
         return net.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : net;
     }
 
-    /**
-     * Nombre de tentatives en cas de collision sur la colonne UNIQUE `barcode`.
-     * Voir revue de code — "Pas de gestion de collision sur barcode/ticket_number".
-     * La colonne `barcode` est UNIQUE en base mais generateBarcode() ne
-     * vérifie jamais l'unicité au préalable ; en cas de collision (même
-     * commande + même milliseconde tronquée), on retente avec un nouveau
-     * tirage plutôt que de laisser remonter un 500 générique au client.
-     */
-    private static final int MAX_BARCODE_GENERATION_ATTEMPTS = 5;
-
     @Override
     public Ticket ensureTicketForOrder(Order order) {
         return ticketRepository.findByOrderId(order.getId())
@@ -242,7 +241,7 @@ public class TicketServiceImpl implements TicketService {
                         // AJOUT : date d'expiration calculée à l'émission (voir
                         // revue de code, règle manquante n°16 — un ticket ne
                         // pouvait jamais expirer).
-                        .expiresAt(now.plus( ticketExpirationDays, java.time.temporal.ChronoUnit.DAYS))
+                        .expiresAt(now.plus(ticketExpirationDays, java.time.temporal.ChronoUnit.DAYS))
                         .build();
                 return ticketRepository.save(ticket);
             } catch (DataIntegrityViolationException e) {
@@ -270,13 +269,13 @@ public class TicketServiceImpl implements TicketService {
                     // une commande annulée. Voir revue de code, règle manquante
                     // n°2 (section Ticket & Reçu).
                     if (order.getStatus() == com.template.vivid.model.enums.OrderStatus.CANCELLED) {
-                        throw new IllegalStateException(
+                        throw new InvalidStateTransitionException(
                                 "Impossible de générer un ticket pour la commande #" + orderId + " : elle est annulée.");
                     }
 
                     List<Article> articles = articleRepository.findByOrderId(orderId);
                     if (articles.isEmpty()) {
-                        throw new IllegalArgumentException(
+                        throw new InvalidStateTransitionException(
                                 "Impossible de générer le ticket : aucun vêtement n'a encore été enregistré pour cette commande.");
                     }
 
@@ -303,14 +302,14 @@ public class TicketServiceImpl implements TicketService {
 
         if (ticket.getStatus() == TicketStatus.EXPIRED
                 || (ticket.getExpiresAt() != null && now.isAfter(ticket.getExpiresAt())
-                        && ticket.getStatus() != TicketStatus.DOWNLOADED)) {
+                && ticket.getStatus() != TicketStatus.DOWNLOADED)) {
             if (ticket.getStatus() != TicketStatus.EXPIRED) {
                 ticket.setStatus(TicketStatus.EXPIRED);
                 ticketRepository.save(ticket);
                 log.info("Ticket {} de la commande {} marqué EXPIRED (délai de validité dépassé)",
                         ticket.getId(), ticket.getOrder().getId());
             }
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Ce ticket a expiré (délai de retrait dépassé). Contactez le personnel de la boutique.");
         }
 
