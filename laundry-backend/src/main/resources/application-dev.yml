@@ -31,7 +31,7 @@ spring:
 # Logging plus verbeux en développement
 logging:
   level:
-    com.template.auth:          DEBUG
+    com.template.auth: DEBUG
     org.springframework.security: DEBUG
-    org.hibernate.SQL:          DEBUG
+    org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE

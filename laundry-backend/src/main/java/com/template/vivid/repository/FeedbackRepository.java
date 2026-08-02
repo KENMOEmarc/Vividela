@@ -13,7 +13,9 @@ import java.util.Optional;
 @Repository
 public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
 
-    /** Le formulaire d'avis (demandé et/ou rempli) d'une commande donnée. */
+    /**
+     * Le formulaire d'avis (demandé et/ou rempli) d'une commande donnée.
+     */
     Optional<Feedback> findByOrderId(Long orderId);
 
     /**

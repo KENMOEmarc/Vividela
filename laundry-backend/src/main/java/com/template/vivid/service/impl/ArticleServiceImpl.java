@@ -25,9 +25,9 @@ import java.util.stream.Collectors;
 public class ArticleServiceImpl implements com.template.vivid.service.ArticleService {
 
     private final ArticleRepository articleRepository;
-    private final OrderRepository   orderRepository;
+    private final OrderRepository orderRepository;
     private final ArticleServiceLineRepository articleServiceRepository;
-    private final ServicePriceRepository   servicePriceRepository;
+    private final ServicePriceRepository servicePriceRepository;
     private final OrderService orderService;
     private final com.template.vivid.service.NotificationService notificationService;
 
@@ -235,8 +235,8 @@ public class ArticleServiceImpl implements com.template.vivid.service.ArticleSer
             throw new IllegalStateException(
                     "Impossible de modifier les articles de la commande #" + order.getId()
                             + " : elle est " + (order.getStatus() == com.template.vivid.model.enums.OrderStatus.DELIVERED
-                                    ? "livrée" : order.getStatus() == com.template.vivid.model.enums.OrderStatus.CANCELLED
-                                    ? "annulée" : "déjà payée intégralement") + ".");
+                            ? "livrée" : order.getStatus() == com.template.vivid.model.enums.OrderStatus.CANCELLED
+                                         ? "annulée" : "déjà payée intégralement") + ".");
         }
     }
 

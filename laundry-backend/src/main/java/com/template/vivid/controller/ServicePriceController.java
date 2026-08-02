@@ -20,9 +20,9 @@ import java.util.List;
 /**
  * Contrôleur REST pour les tarifs de service (prix des services proposés,
  * par type de vêtement + type de service).
- *
+ * <p>
  * URL de base : /service-prices
- *
+ * <p>
  * Règles de sécurité :
  * - Lecture   : ADMIN, MANAGER, EMPLOYEE
  * - Création / modification (ajout des prix) : ADMIN, MANAGER uniquement

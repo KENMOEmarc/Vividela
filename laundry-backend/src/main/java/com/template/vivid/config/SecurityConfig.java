@@ -33,86 +33,85 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter     jwtAuthenticationFilter;
-    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-    private final UserDetailsServiceImpl      userDetailsService;
-    private final CorsConfigurationSource     corsConfigurationSource;
-
     /**
      * Endpoints accessibles sans authentification.
-      * Tout le reste nécessite un token JWT valide
-     *  .
+     * Tout le reste nécessite un token JWT valide
+     * .
      */
     private static final String[] PUBLIC_ENDPOINTS = {
-        "/auth/register",
-        "/auth/login"
+            "/auth/register",
+            "/auth/login"
     };
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final UserDetailsServiceImpl userDetailsService;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     /**
      * Chaîne de filtres de sécurité principale.
-     *
+     * <p>
      * Ordre des règles : de la plus spécifique à la plus générale.
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-            // Désactive CSRF (non pertinent pour une API REST stateless JWT)
-            .csrf(AbstractHttpConfigurer::disable)
+                // Désactive CSRF (non pertinent pour une API REST stateless JWT)
+                .csrf(AbstractHttpConfigurer::disable)
 
-            // Active CORS avec la configuration définie dans CorsConfig.
-            // OBLIGATOIRE en Spring Security 6 : sans cette ligne, les en-têtes CORS
-            // ne sont pas ajoutés même si CorsConfigurationSource est déclaré en bean.
-            .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                // Active CORS avec la configuration définie dans CorsConfig.
+                // OBLIGATOIRE en Spring Security 6 : sans cette ligne, les en-têtes CORS
+                // ne sont pas ajoutés même si CorsConfigurationSource est déclaré en bean.
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
-            // Règles d'autorisation par URL et par rôle
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                // Règles d'autorisation par URL et par rôle
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
 
-                // Suppression : Admin uniquement (toutes les suppressions de l'application)
-                .requestMatchers(HttpMethod.DELETE, "/**").hasRole("ADMIN")
+                        // Suppression : Admin uniquement (toutes les suppressions de l'application)
+                        .requestMatchers(HttpMethod.DELETE, "/**").hasRole("ADMIN")
 
-                // Création / modification des utilisateurs : Admin, Manager ou Employé.
-                // La restriction fine "seul un Admin peut créer/promouvoir un Admin,
-                // seul un Admin/Manager peut créer/promouvoir un Manager" est appliquée
-                // dans UserServiceImpl, qui connaît le rôle du créateur ET le rôle cible.
-                .requestMatchers(HttpMethod.POST,   "/users/**").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
-                .requestMatchers(HttpMethod.PUT,    "/users/**").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
+                        // Création / modification des utilisateurs : Admin, Manager ou Employé.
+                        // La restriction fine "seul un Admin peut créer/promouvoir un Admin,
+                        // seul un Admin/Manager peut créer/promouvoir un Manager" est appliquée
+                        // dans UserServiceImpl, qui connaît le rôle du créateur ET le rôle cible.
+                        .requestMatchers(HttpMethod.POST, "/users/**").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.PUT, "/users/**").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
 
-                // Lecture : Admin, Manager ou Employé (GET /users/me est accessible à tous les rôles)
-                .requestMatchers(HttpMethod.GET, "/users/me").authenticated()
-                .requestMatchers(HttpMethod.GET, "/users/**").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
+                        // Lecture : Admin, Manager ou Employé (GET /users/me est accessible à tous les rôles)
+                        .requestMatchers(HttpMethod.GET, "/users/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/users/**").hasAnyRole("ADMIN", "MANAGER", "EMPLOYEE")
 
-                .anyRequest().authenticated()
-            )
+                        .anyRequest().authenticated()
+                )
 
-            // Force un 401 JSON cohérent (via JwtAuthenticationEntryPoint) pour
-            // toute requête non authentifiée — token absent, expiré, révoqué
-            // ou invalide. Sans cette déclaration explicite, Spring Security
-            // pouvait retomber sur un comportement par défaut renvoyant un 403,
-            // que l'intercepteur Axios du frontend ne traite pas comme une
-            // session expirée (voir authApi.js) : l'utilisateur n'était alors
-            // jamais déconnecté ni redirigé vers /login à l'expiration du token.
-            .exceptionHandling(ex -> ex
-                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-            )
+                // Force un 401 JSON cohérent (via JwtAuthenticationEntryPoint) pour
+                // toute requête non authentifiée — token absent, expiré, révoqué
+                // ou invalide. Sans cette déclaration explicite, Spring Security
+                // pouvait retomber sur un comportement par défaut renvoyant un 403,
+                // que l'intercepteur Axios du frontend ne traite pas comme une
+                // session expirée (voir authApi.js) : l'utilisateur n'était alors
+                // jamais déconnecté ni redirigé vers /login à l'expiration du token.
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                )
 
-            // Pas de session HTTP : Spring Security ne crée pas de HttpSession
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
+                // Pas de session HTTP : Spring Security ne crée pas de HttpSession
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
 
-            // Fournisseur d'authentification (UserDetails + BCrypt)
-            .authenticationProvider(authenticationProvider())
+                // Fournisseur d'authentification (UserDetails + BCrypt)
+                .authenticationProvider(authenticationProvider())
 
-            // Injecte notre filtre JWT AVANT le filtre standard username/password
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // Injecte notre filtre JWT AVANT le filtre standard username/password
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
-            .build();
+                .build();
     }
 
     /**
      * Fournisseur d'authentification DAO.
-     *
+     * <p>
      * Relie UserDetailsService (chargement user depuis DB) +
      * PasswordEncoder (comparaison BCrypt) pour l'authentification.
      */
@@ -136,7 +135,7 @@ public class SecurityConfig {
 
     /**
      * Encodeur de mots de passe BCrypt.
-     *
+     * <p>
      * BCrypt est un algorithme de hachage adaptatif conçu pour être lent
      * et résistant aux attaques par force brute / rainbow tables.
      * Le facteur de coût (strength=10) peut être augmenté avec le temps.

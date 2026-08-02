@@ -55,11 +55,15 @@ public class NotificationServiceImpl implements NotificationService {
     // alerte. Les constantes ci-dessous sont configurables via
     // application.yml (voir section "notifications.retry").
 
-    /** Nombre maximum de tentatives (au-delà de l'envoi initial) avant abandon. */
+    /**
+     * Nombre maximum de tentatives (au-delà de l'envoi initial) avant abandon.
+     */
     @Value("${notifications.retry.max-attempts:3}")
     private int maxRetryAttempts;
 
-    /** Nombre maximum de notifications retentées par exécution du job. */
+    /**
+     * Nombre maximum de notifications retentées par exécution du job.
+     */
     @Value("${notifications.retry.batch-size:100}")
     private int retryBatchSize;
 
@@ -411,7 +415,7 @@ public class NotificationServiceImpl implements NotificationService {
      * exécutée sur le thread du scheduler.
      */
     @Scheduled(fixedDelayString = "${notifications.retry.fixed-delay-ms:300000}",
-               initialDelayString = "${notifications.retry.initial-delay-ms:60000}")
+            initialDelayString = "${notifications.retry.initial-delay-ms:60000}")
     public void retryFailedChannelNotifications() {
         List<Notification> candidates = notificationRepository.findFailedForRetry(
                 List.of(NotificationType.EMAIL, NotificationType.SMS),
@@ -448,7 +452,7 @@ public class NotificationServiceImpl implements NotificationService {
      * chargée sur le thread du scheduler (qui serait détachée ici).
      */
     private void retrySingleNotification(Long notificationId, NotificationType type, String subject, String message,
-                                          String email, String phone, int previousRetryCount) {
+                                         String email, String phone, int previousRetryCount) {
         boolean sent = switch (type) {
             case EMAIL -> email != null && !email.isBlank() && emailSender.sendEmail(email, subject, message);
             case SMS -> phone != null && !phone.isBlank() && smsSender.sendSms(phone, subject + " - " + message);
@@ -561,7 +565,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private void recordNotification(User user, Order order, String subject, String message,
-                                     NotificationType type, RequestStatus status) {
+                                    NotificationType type, RequestStatus status) {
         Notification n = Notification.builder()
                 .user(user)
                 .order(order)

@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * Contrôleur REST pour les tickets de dépôt et les reçus (PDF) d'une commande.
- *
+ * <p>
  * URL de base : /orders/{orderId}/ticket  (context-path=/api dans application.yml)
- *
+ * <p>
  * Un ticket ou un reçu ne peut être généré qu'une fois la commande créée ET au
  * moins un vêtement (article) enregistré dessus.
  */
@@ -33,8 +33,8 @@ import org.springframework.web.bind.annotation.*;
 public class TicketController {
 
     private final TicketService ticketService;
-    private final OrderService  orderService;
-    private final UserService   userService;
+    private final OrderService orderService;
+    private final UserService userService;
 
     /**
      * Vérifie que l'appelant est membre du personnel, ou le client propriétaire
@@ -107,7 +107,7 @@ public class TicketController {
 
     /**
      * GET /orders/{orderId}/ticket/receipt — génère et télécharge le reçu de la commande au format PDF.
-     *
+     * <p>
      * Comme pour le ticket, le reçu ne peut être généré qu'une fois la commande créée
      * ET au moins un vêtement (article) enregistré dessus.
      */

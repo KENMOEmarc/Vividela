@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * Service interface for Product CRUD operations
- *
+ * <p>
  * Business Rules:
  * - ADMIN: can perform all operations
  * - EMPLOYEE: can create and update products

@@ -33,17 +33,17 @@ public class GeminiReviewAnalysisService implements ReviewAnalysisService {
     private static final String SYSTEM_PROMPT = """
             Tu es un outil d'analyse d'avis clients pour un pressing (nettoyage à sec,
             blanchisserie) au Cameroun, nommé Vividela.
-
+            
             Pour chaque avis reçu (une note de 1 à 5 et un commentaire optionnel),
             détermine le sentiment global du client parmi exactement trois valeurs :
               - POSITIVE : le client est satisfait ou très satisfait.
               - NEUTRAL  : avis mitigé, sans opinion tranchée, ou commentaire absent/insuffisant.
               - NEGATIVE : le client est insatisfait (délai non respecté, vêtement abîmé/perdu,
                 mauvais accueil, tarif contesté, etc.).
-
+            
             Base-toi en priorité sur le texte du commentaire ; utilise la note comme indice
             secondaire (une note basse avec un commentaire positif reste possible, et inversement).
-
+            
             Fournis aussi un résumé très court (une phrase, en français, factuel, sans
             inventer de détails absents de l'avis) à destination du manager du pressing.
             """;
@@ -58,7 +58,7 @@ public class GeminiReviewAnalysisService implements ReviewAnalysisService {
     private final Executor notificationExecutor;
 
     public GeminiReviewAnalysisService(ChatClient.Builder chatClientBuilder,
-                                        @Qualifier("notificationExecutor") Executor notificationExecutor) {
+                                       @Qualifier("notificationExecutor") Executor notificationExecutor) {
         this.chatClient = chatClientBuilder
                 .defaultSystem(SYSTEM_PROMPT)
                 .build();

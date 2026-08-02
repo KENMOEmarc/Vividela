@@ -46,10 +46,7 @@ public class FeedbackServiceImpl implements FeedbackService {
             return;
         }
 
-        Feedback feedback = Feedback.builder()
-                .order(order)
-                .requestedAt(Instant.now(clock))
-                .build();
+        Feedback feedback = Feedback.builder().order(order).requestedAt(Instant.now(clock)).build();
         feedbackRepository.save(feedback);
 
         TransactionUtils.runAfterCommit(() -> notificationService.notifyFeedbackRequested(order));
@@ -59,32 +56,25 @@ public class FeedbackServiceImpl implements FeedbackService {
     @Override
     @Transactional(readOnly = true)
     public FeedbackDto getFeedbackForOrder(Long orderId, Long callerId, boolean isStaff) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Commande introuvable: " + orderId));
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Commande introuvable: " + orderId));
 
         ensureOwnerOrStaff(order, callerId, isStaff);
 
-        return feedbackRepository.findByOrderId(orderId)
-                .map(FeedbackMapper::toDto)
-                .orElse(null);
+        return feedbackRepository.findByOrderId(orderId).map(FeedbackMapper::toDto).orElse(null);
     }
 
     @Override
     public FeedbackDto submitFeedback(Long orderId, Long customerId, FeedbackSubmitRequest request) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Commande introuvable: " + orderId));
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Commande introuvable: " + orderId));
 
         if (order.getClientUser() == null || !order.getClientUser().getId().equals(customerId)) {
             throw new AccessDeniedException("Vous ne pouvez donner votre avis que sur vos propres commandes.");
         }
         if (order.getStatus() != OrderStatus.DELIVERED) {
-            throw new IllegalStateException(
-                    "Vous ne pouvez donner votre avis qu'une fois la commande #" + orderId + " livrée.");
+            throw new IllegalStateException("Vous ne pouvez donner votre avis qu'une fois la commande #" + orderId + " livrée.");
         }
 
-        Feedback feedback = feedbackRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Aucun formulaire d'avis n'a été généré pour la commande #" + orderId + "."));
+        Feedback feedback = feedbackRepository.findByOrderId(orderId).orElseThrow(() -> new ResourceNotFoundException("Aucun formulaire d'avis n'a été généré pour la commande #" + orderId + "."));
 
         if (feedback.getSubmittedAt() != null) {
             throw new IllegalStateException("Vous avez déjà donné votre avis pour la commande #" + orderId + ".");
@@ -114,11 +104,9 @@ public class FeedbackServiceImpl implements FeedbackService {
         // la race soit improbable mais pas impossible, et une notification
         // manquée ou une exception "Feedback introuvable" serait difficile à
         // diagnostiquer en production.
-        TransactionUtils.runAfterCommit(() -> feedbackAnalysisCoordinator.processFeedbackAsync(
-                savedFeedbackId, request.getRating(), request.getComment()));
+        TransactionUtils.runAfterCommit(() -> feedbackAnalysisCoordinator.processFeedbackAsync(savedFeedbackId, request.getRating(), request.getComment()));
 
-        log.info("Avis client enregistré pour la commande {} (note={}) — analyse IA et notifications en cours (asynchrone)",
-                orderId, saved.getRating());
+        log.info("Avis client enregistré pour la commande {} (note={}) — analyse IA et notifications en cours (asynchrone)", orderId, saved.getRating());
 
         return FeedbackMapper.toDto(saved);
     }

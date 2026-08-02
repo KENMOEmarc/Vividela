@@ -47,10 +47,10 @@ public class FeedbackAnalysisCoordinator {
 
     /**
      * @return une {@link CompletableFuture} qui se termine une fois toute la
-     *         chaîne (analyse + persistance + notifications) terminée —
-     *         volontairement ignorée par l'appelant en production (l'envoi
-     *         est "fire-and-forget" du point de vue de la requête HTTP),
-     *         utile en revanche pour les tests.
+     * chaîne (analyse + persistance + notifications) terminée —
+     * volontairement ignorée par l'appelant en production (l'envoi
+     * est "fire-and-forget" du point de vue de la requête HTTP),
+     * utile en revanche pour les tests.
      */
     public CompletableFuture<Void> processFeedbackAsync(Long feedbackId, Integer rating, String comment) {
         return reviewAnalysisService.analyzeAsync(rating, comment)

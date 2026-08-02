@@ -1,5 +1,6 @@
-package com.template.vivid.model.dto;
+package com.template.vivid.model.requests;
 
+import com.template.vivid.model.dto.ArticleDto;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

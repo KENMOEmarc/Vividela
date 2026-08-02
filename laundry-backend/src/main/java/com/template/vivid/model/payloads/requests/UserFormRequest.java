@@ -1,4 +1,4 @@
-package com.template.vivid.model.dto;
+package com.template.vivid.model.requests;
 
 import com.template.vivid.model.enums.RoleType;
 import jakarta.validation.constraints.Email;

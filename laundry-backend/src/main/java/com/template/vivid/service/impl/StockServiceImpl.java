@@ -34,12 +34,12 @@ import java.util.stream.Collectors;
 @Transactional
 public class StockServiceImpl implements StockService {
 
-    private final StockRepository               stockRepository;
-    private final StockMovementRepository       stockMovementRepository;
+    private final StockRepository stockRepository;
+    private final StockMovementRepository stockMovementRepository;
     private final ProductRegistrationRepository productRegistrationRepository;
-    private final ProductRepository             productRepository;
-    private final UserRepository                userRepository;
-    private final NotificationService            notificationService;
+    private final ProductRepository productRepository;
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     // ─────────────────────────────────── READ ────────────────────────────────
 

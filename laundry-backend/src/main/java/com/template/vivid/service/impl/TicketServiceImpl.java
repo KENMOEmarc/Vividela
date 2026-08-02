@@ -42,14 +42,22 @@ import java.util.List;
 @Transactional
 public class TicketServiceImpl implements TicketService {
 
-    private final TicketRepository           ticketRepository;
-    private final ReceiptRepository          receiptRepository;
-    private final OrderRepository            orderRepository;
-    private final ArticleRepository          articleRepository;
+    /**
+     * Nombre de tentatives en cas de collision sur la colonne UNIQUE `barcode`.
+     * Voir revue de code — "Pas de gestion de collision sur barcode/ticket_number".
+     * La colonne `barcode` est UNIQUE en base mais generateBarcode() ne
+     * vérifie jamais l'unicité au préalable ; en cas de collision (même
+     * commande + même milliseconde tronquée), on retente avec un nouveau
+     * tirage plutôt que de laisser remonter un 500 générique au client.
+     */
+    private static final int MAX_BARCODE_GENERATION_ATTEMPTS = 5;
+    private final TicketRepository ticketRepository;
+    private final ReceiptRepository receiptRepository;
+    private final OrderRepository orderRepository;
+    private final ArticleRepository articleRepository;
     private final ArticleServiceLineRepository articleServiceLineRepository;
     private final NotificationService notificationService;
     private final UserService userService;
-
     @Value("${vividela.ticket.validity-days:90}")
     private int ticketExpirationDays;
 
@@ -142,7 +150,7 @@ public class TicketServiceImpl implements TicketService {
         // commande ne peuvent plus diverger. Voir revue de code, règle
         // manquante n°13.
         java.math.BigDecimal netAmountDue = computeNetAmountDue(order);
-        byte[] pdf = ReceiptPdfGenerator.generate(order, articles, allServices, reference,UserMapper.toUser(issuer), netAmountDue);
+        byte[] pdf = ReceiptPdfGenerator.generate(order, articles, allServices, reference, UserMapper.toUser(issuer), netAmountDue);
         return new GeneratedPdfDto(pdf, reference);
     }
 
@@ -203,16 +211,6 @@ public class TicketServiceImpl implements TicketService {
         return net.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : net;
     }
 
-    /**
-     * Nombre de tentatives en cas de collision sur la colonne UNIQUE `barcode`.
-     * Voir revue de code — "Pas de gestion de collision sur barcode/ticket_number".
-     * La colonne `barcode` est UNIQUE en base mais generateBarcode() ne
-     * vérifie jamais l'unicité au préalable ; en cas de collision (même
-     * commande + même milliseconde tronquée), on retente avec un nouveau
-     * tirage plutôt que de laisser remonter un 500 générique au client.
-     */
-    private static final int MAX_BARCODE_GENERATION_ATTEMPTS = 5;
-
     @Override
     public Ticket ensureTicketForOrder(Order order) {
         return ticketRepository.findByOrderId(order.getId())
@@ -242,7 +240,7 @@ public class TicketServiceImpl implements TicketService {
                         // AJOUT : date d'expiration calculée à l'émission (voir
                         // revue de code, règle manquante n°16 — un ticket ne
                         // pouvait jamais expirer).
-                        .expiresAt(now.plus( ticketExpirationDays, java.time.temporal.ChronoUnit.DAYS))
+                        .expiresAt(now.plus(ticketExpirationDays, java.time.temporal.ChronoUnit.DAYS))
                         .build();
                 return ticketRepository.save(ticket);
             } catch (DataIntegrityViolationException e) {
@@ -303,7 +301,7 @@ public class TicketServiceImpl implements TicketService {
 
         if (ticket.getStatus() == TicketStatus.EXPIRED
                 || (ticket.getExpiresAt() != null && now.isAfter(ticket.getExpiresAt())
-                        && ticket.getStatus() != TicketStatus.DOWNLOADED)) {
+                && ticket.getStatus() != TicketStatus.DOWNLOADED)) {
             if (ticket.getStatus() != TicketStatus.EXPIRED) {
                 ticket.setStatus(TicketStatus.EXPIRED);
                 ticketRepository.save(ticket);
