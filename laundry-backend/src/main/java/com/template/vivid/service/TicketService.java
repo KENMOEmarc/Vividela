@@ -55,7 +55,7 @@ public interface TicketService {
      * Si un reçu existe déjà pour cette commande, sa référence existante est
      * simplement renvoyée (aucun doublon n'est créé).
      *
-     * @param order      la commande intégralement payée
+     * @param order       la commande intégralement payée
      * @param issuerEmail e-mail de l'utilisateur à l'origine de la génération
      *                    (peut être {@code null} pour une génération automatique
      *                    sans contexte utilisateur, ex. déclenchée par le

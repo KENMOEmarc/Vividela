@@ -20,20 +20,20 @@ import java.util.stream.Collectors;
  * Gestionnaire global d'exceptions pour tous les contrôleurs REST.
  *
  * @RestControllerAdvice = @ControllerAdvice + @ResponseBody
- *   Intercepte les exceptions levées dans n'importe quel @RestController
- *   et les transforme en réponses JSON structurées (ApiResponse).
- *
+ * Intercepte les exceptions levées dans n'importe quel @RestController
+ * et les transforme en réponses JSON structurées (ApiResponse).
+ * <p>
  * AVANTAGES :
- *   - Code de gestion d'erreurs centralisé (DRY)
- *   - Réponses cohérentes sur toute l'API
- *   - Les contrôleurs restent propres (aucun try/catch)
- *   - Facile à étendre pour de nouveaux types d'exception
- *
+ * - Code de gestion d'erreurs centralisé (DRY)
+ * - Réponses cohérentes sur toute l'API
+ * - Les contrôleurs restent propres (aucun try/catch)
+ * - Facile à étendre pour de nouveaux types d'exception
+ * <p>
  * HIÉRARCHIE DES HANDLERS :
- *   Spring choisit le handler le plus spécifique.
- *   Ex: UserAlreadyExistsException → son handler dédié,
- *       pas handleGeneralException().
- *
+ * Spring choisit le handler le plus spécifique.
+ * Ex: UserAlreadyExistsException → son handler dédié,
+ * pas handleGeneralException().
+ * <p>
  * TABLEAU DE CORRESPONDANCE :
  * ┌─────────────────────────────────────────┬──────────────┐
  * │  Exception                              │  HTTP Status │
@@ -53,7 +53,7 @@ public class GlobalExceptionHandler {
 
     /**
      * Erreurs de validation @Valid sur les @RequestBody DTOs.
-     *
+     * <p>
      * Retourne la liste de tous les champs invalides avec leur message d'erreur.
      * Format : ["email: Format d'email invalide", "password: Le mot de passe doit..."]
      */
@@ -143,7 +143,7 @@ public class GlobalExceptionHandler {
 
     /**
      * Données invalides fournies par un service (entité introuvable, règle métier, etc.).
-     *
+     * <p>
      * BUGFIX : IllegalArgumentException était levée dans plusieurs services
      * (StockServiceImpl, ProductServiceImpl, OrderServiceImpl…) mais n'était pas
      * interceptée ici — elle tombait dans le handler générique handleGeneralException()
@@ -176,7 +176,7 @@ public class GlobalExceptionHandler {
     /**
      * Violation de contrainte d'intégrité en base (ex. collision sur une
      * colonne UNIQUE comme barcode/ticket_number, clé étrangère, etc.).
-     *
+     * <p>
      * Avant ce handler dédié, ces erreurs tombaient dans le fallback générique
      * (500 Internal Server Error) sans message exploitable pour l'utilisateur.
      * On renvoie désormais un 409 Conflict avec un message générique invitant

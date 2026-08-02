@@ -1,4 +1,4 @@
-package com.template.vivid.model.dto;
+package com.template.vivid.model.responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;

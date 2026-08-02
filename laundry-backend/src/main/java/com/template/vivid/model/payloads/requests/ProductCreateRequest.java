@@ -1,8 +1,8 @@
-package com.template.vivid.model.dto;
+package com.template.vivid.model.requests;
 
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,14 +12,14 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 /**
- * DTO for updating an existing Product
+ * DTO for creating a new Product
  */
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProductUpdateRequest {
+public class ProductCreateRequest {
 
     @NotBlank(message = "Product name is required")
     private String name;

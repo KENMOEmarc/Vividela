@@ -33,15 +33,16 @@ import java.util.stream.Collectors;
 @Transactional
 public class PaymentServiceImpl implements PaymentService {
 
+    /**
+     * Statuts de paiement considérés comme "engagés" pour le contrôle de surpaiement.
+     */
+    private static final java.util.Set<PaymentStatus> COMMITTED_STATUSES = EnumSet.of(PaymentStatus.PENDING, PaymentStatus.COMPLETED);
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final OrderService orderService;
     private final TicketService ticketService;
-
-    /** Statuts de paiement considérés comme "engagés" pour le contrôle de surpaiement. */
-    private static final java.util.Set<PaymentStatus> COMMITTED_STATUSES = EnumSet.of(PaymentStatus.PENDING, PaymentStatus.COMPLETED);
 
     @Override
     public PaymentDto recordPayment(PaymentRequest request, Long currentUserId) {
@@ -172,8 +173,8 @@ public class PaymentServiceImpl implements PaymentService {
     /**
      * Recalcule order.paymentStatus à partir de la somme des paiements
      * COMPLETED de la commande, comparée au montant net dû :
-     *  - somme COMPLETED >= net dû → COMPLETED (soldée)
-     *  - sinon (paiement partiel ou aucun paiement confirmé) → reste PENDING
+     * - somme COMPLETED >= net dû → COMPLETED (soldée)
+     * - sinon (paiement partiel ou aucun paiement confirmé) → reste PENDING
      * Ne touche jamais un statut déjà FAILED/REFUNDED positionné manuellement
      * par le personnel (ex : remboursement effectué).
      */

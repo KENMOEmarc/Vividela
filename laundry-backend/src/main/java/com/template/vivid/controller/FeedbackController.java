@@ -16,10 +16,10 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * Contrôleur REST du formulaire d'avis client rattaché à une commande.
- *
+ * <p>
  * URL de base : /orders/{orderId}/feedback  (le préfixe /api est ajouté par
  * context-path, voir application.yml).
- *
+ * <p>
  * Flux : une fois une commande livrée, un formulaire "vide" est généré côté
  * serveur (voir FeedbackServiceImpl#requestFeedback, déclenché depuis
  * OrderServiceImpl#updateOrder) et le client en est notifié. Ce contrôleur

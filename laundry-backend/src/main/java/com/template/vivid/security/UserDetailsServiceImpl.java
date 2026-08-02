@@ -14,20 +14,20 @@ import java.util.List;
 
 /**
  * Implémentation de UserDetailsService — pont entre Spring Security et la base de données.
- *
+ * <p>
  * RÔLE :
- *   Spring Security appelle loadUserByUsername() lors de chaque authentification
- *   pour récupérer les informations de l'utilisateur (mot de passe haché, rôles,
- *   état du compte) et les comparer aux credentials fournis.
- *
+ * Spring Security appelle loadUserByUsername() lors de chaque authentification
+ * pour récupérer les informations de l'utilisateur (mot de passe haché, rôles,
+ * état du compte) et les comparer aux credentials fournis.
+ * <p>
  * FLUX D'UTILISATION :
- *   1. JwtAuthenticationFilter extrait l'email du token JWT
- *   2. Appelle loadUserByUsername(email) ici
- *   3. Retourne un UserDetails que Spring Security stocke dans le SecurityContext
+ * 1. JwtAuthenticationFilter extrait l'email du token JWT
+ * 2. Appelle loadUserByUsername(email) ici
+ * 3. Retourne un UserDetails que Spring Security stocke dans le SecurityContext
  *
  * @Transactional(readOnly = true) :
- *   - Lance une transaction en lecture seule → Hibernate peut optimiser (pas de dirty checking)
- *   - Garantit la cohérence de lecture si d'autres opérations DB sont en cours
+ * - Lance une transaction en lecture seule → Hibernate peut optimiser (pas de dirty checking)
+ * - Garantit la cohérence de lecture si d'autres opérations DB sont en cours
  */
 @Service
 @RequiredArgsConstructor
@@ -46,9 +46,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
         User user = userRepository.findByEmailOrUserNameIgnoreCase(identifier)
-            .orElseThrow(() -> new UsernameNotFoundException(
-                "Utilisateur non trouvé avec l'identifiant: " + identifier
-            ));
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "Utilisateur non trouvé avec l'identifiant: " + identifier
+                ));
 
         /*
          * Conversion User (entité JPA) → UserDetails (interface Spring Security)
@@ -63,14 +63,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         String authority = "ROLE_" + (user.getRole() != null ? user.getRole() : "CUSTOMER");
 
         return org.springframework.security.core.userdetails.User.builder()
-            .username(user.getEmail())
-            .password(user.getPassword())
-            .authorities(List.of(new SimpleGrantedAuthority(authority)))
-            .disabled(!user.getIsActive())
-            .accountExpired(false)
-            .credentialsExpired(false)
-            .accountLocked(false)
-            .build();
+                .username(user.getEmail())
+                .password(user.getPassword())
+                .authorities(List.of(new SimpleGrantedAuthority(authority)))
+                .disabled(!user.getIsActive())
+                .accountExpired(false)
+                .credentialsExpired(false)
+                .accountLocked(false)
+                .build();
     }
 
     /**
@@ -79,9 +79,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Transactional(readOnly = true)
     public Long getUserIdByUsername(String identifier) {
         User user = userRepository.findByEmailOrUserNameIgnoreCase(identifier)
-            .orElseThrow(() -> new UsernameNotFoundException(
-                "Utilisateur non trouvé: " + identifier
-            ));
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "Utilisateur non trouvé: " + identifier
+                ));
         return user.getId();
     }
 

@@ -19,12 +19,12 @@ import java.util.List;
 
 /**
  * Contrôleur REST pour la gestion des clients et de leurs commandes.
- *
+ * <p>
  * URL de base : /customers  (context-path=/api est défini dans application.yml)
- *
+ * <p>
  * CORRECTION : suppression du préfixe "/api/" dans @RequestMapping.
  * L'ancienne valeur "/api/customers" produisait l'URL "/api/api/customers".
- *
+ * <p>
  * BUGFIX MAJEUR : le frontend (customerApi.js / CustomerFormModal / CustomersPage)
  * appelle déjà GET /customers/{id}, POST /customers, PUT /customers/{id},
  * DELETE /customers/{id} et GET /customers/{id}/stats — mais AUCUN de ces
@@ -32,7 +32,7 @@ import java.util.List;
  * Conséquence : créer, modifier ou supprimer un client depuis le dashboard
  * admin échouait systématiquement avec une erreur 404. Ces endpoints sont
  * ajoutés ici, en délégant à UserService (un client est un User de rôle CUSTOMER).
- *
+ * <p>
  * BUGFIX SÉCURITÉ : GET /{customerId}/orders n'était protégé par aucune règle
  * d'autorisation — n'importe quel client connecté pouvait consulter les
  * commandes de n'importe quel autre client en changeant l'ID dans l'URL (IDOR).
@@ -46,7 +46,7 @@ import java.util.List;
 public class CustomerOrderController {
 
     private final OrderService orderService;
-    private final UserService  userService;
+    private final UserService userService;
 
     /**
      * GET /customers/{customerId}/orders

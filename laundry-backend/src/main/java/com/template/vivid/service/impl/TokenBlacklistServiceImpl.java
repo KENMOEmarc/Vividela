@@ -12,27 +12,27 @@ import java.time.Instant;
 
 /**
  * Implémentation MySQL de la blacklist de tokens JWT.
- *
+ * <p>
  * REMPLACE REDIS :
- *   Table revoked_tokens stocke les JTI des tokens révoqués.
- *   Chaque ligne contient :
- *   - jti : identifiant unique du token (clé de recherche rapide)
- *   - expiresAt : date d'expiration du token
- *   - revokedAt : timestamp de la révocation
- *
+ * Table revoked_tokens stocke les JTI des tokens révoqués.
+ * Chaque ligne contient :
+ * - jti : identifiant unique du token (clé de recherche rapide)
+ * - expiresAt : date d'expiration du token
+ * - revokedAt : timestamp de la révocation
+ * <p>
  * TTL SIMULÉ :
- *   Au lieu du TTL natif Redis, on supprime manuellement les lignes expirées
- *   via un job planifié (RevokedTokenCleanupJob) qui s'exécute toutes les heures
- *   (configurable via security.jwt.blacklist-cleanup.fixed-delay-ms).
- *
+ * Au lieu du TTL natif Redis, on supprime manuellement les lignes expirées
+ * via un job planifié (RevokedTokenCleanupJob) qui s'exécute toutes les heures
+ * (configurable via security.jwt.blacklist-cleanup.fixed-delay-ms).
+ * <p>
  * PERFORMANCE :
- *   - O(1) lookup via existsByJti() (index unique sur jti)
- *   - Pas d'indexation SQL complexe, pas de scan complet
- *   - Gestion centralisée en base : audit/historique persistant
- *
+ * - O(1) lookup via existsByJti() (index unique sur jti)
+ * - Pas d'indexation SQL complexe, pas de scan complet
+ * - Gestion centralisée en base : audit/historique persistant
+ * <p>
  * GESTION ERREURS :
- *   - DB indisponible : log warn, ne pas lever d'exception
- *   - Double appel blacklist() avec même jti : géré en idempotence
+ * - DB indisponible : log warn, ne pas lever d'exception
+ * - Double appel blacklist() avec même jti : géré en idempotence
  */
 @Slf4j
 @Service

@@ -23,6 +23,8 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
      */
     boolean existsByStock_Product_Id(Long productId);
 
-    /** Vérifie si un lot de stock précis possède déjà des mouvements historiques. */
+    /**
+     * Vérifie si un lot de stock précis possède déjà des mouvements historiques.
+     */
     boolean existsByStockId(Long stockId);
 }

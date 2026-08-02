@@ -1,11 +1,9 @@
-package com.template.vivid.model.dto;
+package com.template.vivid.model.requests;
 
 import com.template.vivid.model.enums.ArticleStatus;
-import com.template.vivid.model.enums.ClothingType;
 import com.template.vivid.model.enums.FabricType;
 import com.template.vivid.model.enums.ServiceType;
 import com.template.vivid.model.enums.SizeType;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -13,25 +11,19 @@ import lombok.*;
 import java.util.List;
 
 /**
- * DTO pour la création d'un article (vêtement d'une commande de pressing).
+ * DTO pour la mise à jour d'un article existant.
+ * Tous les champs sont optionnels sauf le statut.
  */
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ArticleCreateRequest {
+public class ArticleUpdateRequest {
 
-    @NotNull(message = "Le type de vêtement est requis")
-    private ClothingType clothingType;
-
-    @NotNull(message = "La taille est requise")
     private SizeType size;
-
-    @NotNull(message = "Le type de tissu est requis")
     private FabricType fabric;
 
-    /** Couleur en texte libre ou code hex — ex: "#FF5733", "Rouge" */
     @Size(max = 50, message = "La couleur ne peut pas dépasser 50 caractères")
     private String color;
 
@@ -42,10 +34,9 @@ public class ArticleCreateRequest {
     private ArticleStatus status;
 
     /**
-     * Services de nettoyage à appliquer à l'article (ex: WASH, IRON).
-     * Détermine le prix appliqué (via ServicePrice) et donc le montant
-     * de la commande.
+     * Si fourni (non null), remplace intégralement les services de l'article
+     * et déclenche le recalcul du prix appliqué / du total de la commande.
+     * Si null, les services existants sont conservés tels quels.
      */
-    @NotEmpty(message = "Sélectionnez au moins un service")
     private List<ServiceType> services;
 }

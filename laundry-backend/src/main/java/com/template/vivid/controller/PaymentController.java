@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * REST Controller — Paiements
- *
+ * <p>
  * Endpoints pour l'enregistrement et la gestion des paiements d'une commande.
  */
 @Slf4j

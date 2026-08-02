@@ -16,29 +16,29 @@ import java.util.UUID;
 
 /**
  * Fournisseur de tokens JWT (JSON Web Token).
- *
+ * <p>
  * STRUCTURE D'UN JWT :
- *   Un JWT est une chaîne Base64URL encodée en 3 parties séparées par des points :
- *
- *   eyJhbGciOiJIUzI1NiJ9   ← Header  : algorithme de signature (HS256)
- *   .
- *   eyJzdWIiOiJ1c2VyQG...  ← Payload : claims (informations du token)
- *   .
- *   SflKxwRJSMeKKF2QT4fw   ← Signature : HMACSHA256(header + "." + payload, secret)
- *
+ * Un JWT est une chaîne Base64URL encodée en 3 parties séparées par des points :
+ * <p>
+ * eyJhbGciOiJIUzI1NiJ9   ← Header  : algorithme de signature (HS256)
+ * .
+ * eyJzdWIiOiJ1c2VyQG...  ← Payload : claims (informations du token)
+ * .
+ * SflKxwRJSMeKKF2QT4fw   ← Signature : HMACSHA256(header + "." + payload, secret)
+ * <p>
  * CLAIMS INCLUS DANS LE PAYLOAD :
- *   sub  (subject)    : email de l'utilisateur
- *   jti  (JWT ID)     : identifiant unique du token (pour la blacklist MySQL)
- *   iat  (issued at)  : timestamp de création
- *   exp  (expiration) : timestamp d'expiration
- *   username          : claim personnalisé
- *   userId            : claim personnalisé
- *
+ * sub  (subject)    : email de l'utilisateur
+ * jti  (JWT ID)     : identifiant unique du token (pour la blacklist MySQL)
+ * iat  (issued at)  : timestamp de création
+ * exp  (expiration) : timestamp d'expiration
+ * username          : claim personnalisé
+ * userId            : claim personnalisé
+ * <p>
  * SÉCURITÉ :
- *   - Algorithme HS256 (HMAC-SHA256) avec clé symétrique 256 bits
- *   - Le "secret" doit rester confidentiel côté serveur uniquement
- *   - Un token signé ne peut pas être falsifié sans connaître le secret
- *   - Le payload est visible (Base64 décodable) → ne jamais y mettre de données sensibles
+ * - Algorithme HS256 (HMAC-SHA256) avec clé symétrique 256 bits
+ * - Le "secret" doit rester confidentiel côté serveur uniquement
+ * - Un token signé ne peut pas être falsifié sans connaître le secret
+ * - Le payload est visible (Base64 décodable) → ne jamais y mettre de données sensibles
  */
 @Slf4j
 @Component
@@ -46,16 +46,17 @@ public class JwtTokenProvider {
 
     // Aucune valeur secrète par défaut dans le code : le secret JWT doit être
     // fourni via la variable d'environnement JWT_SECRET.
-     private static final int MIN_SECRET_LENGTH = 32; // 256 bits pour HS256
+    private static final int MIN_SECRET_LENGTH = 32; // 256 bits pour HS256
 
     @Value("${jwt.secret}")
     private String jwtSecret;
 
     @Value("${jwt.expiration}")
     private long jwtExpirationMs;
+
     /**
      * Génère la clé HMAC à partir du secret.
-     *
+     * <p>
      * BUGFIX : le secret configuré (jwt.secret) est une chaîne de caractères
      * en clair, PAS du Base64 (ex. valeur par défaut contenant "!!", qui n'est
      * pas un alphabet Base64 valide). L'ancienne implémentation appelait
@@ -80,7 +81,7 @@ public class JwtTokenProvider {
      * @return Token JWT signé
      */
     public String generateToken(Long userId, String username, String email) {
-        Date now    = new Date();
+        Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtExpirationMs);
 
         return Jwts.builder()
@@ -89,7 +90,7 @@ public class JwtTokenProvider {
                 // JWT ID unique → permet de blacklister ce token précis dans la table revoked_tokens
                 .id(UUID.randomUUID().toString())
                 // Claims personnalisés
-                .claim("userId",   userId)
+                .claim("userId", userId)
                 .claim("username", username)
                 // Horodatages
                 .issuedAt(now)
@@ -169,7 +170,7 @@ public class JwtTokenProvider {
      * déconnexion automatique et la redirection vers /login.
      *
      * @return true si et seulement si le token est syntaxiquement/signature
-     *         valide mais que sa date d'expiration est dépassée.
+     * valide mais que sa date d'expiration est dépassée.
      */
     public boolean isTokenExpired(String token) {
         try {
