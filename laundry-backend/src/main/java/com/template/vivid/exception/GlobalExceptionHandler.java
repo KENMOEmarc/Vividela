@@ -33,19 +33,6 @@ import java.util.stream.Collectors;
  * Spring choisit le handler le plus spécifique.
  * Ex: UserAlreadyExistsException → son handler dédié,
  * pas handleGeneralException().
- * <p>
- * TABLEAU DE CORRESPONDANCE :
- * ┌─────────────────────────────────────────┬──────────────┐
- * │  Exception                              │  HTTP Status │
- * ├─────────────────────────────────────────┼──────────────┤
- * │  MethodArgumentNotValidException        │  400         │
- * │  PasswordMismatchException              │  400         │
- * │  InvalidCredentialsException            │  401         │
- * │  AccessDeniedException                  │  403         │
- * │  UsernameNotFoundException              │  404         │
- * │  UserAlreadyExistsException             │  409         │
- * │  Exception (fallback)                   │  500         │
- * └─────────────────────────────────────────┴──────────────┘
  */
 @Slf4j
 @RestControllerAdvice
@@ -72,6 +59,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("Données invalides", errors));
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException ex) {
+        HttpStatus status = ex.getHttpStatus();
+        if (status == HttpStatus.UNAUTHORIZED || status == HttpStatus.FORBIDDEN) {
+            log.warn("Erreur métier ({}): {}", ex.getClass().getSimpleName(), ex.getMessage());
+        } else {
+            log.info("Erreur métier ({}): {}", ex.getClass().getSimpleName(), ex.getMessage());
+        }
+
+        return ResponseEntity
+                .status(status)
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
     /**
