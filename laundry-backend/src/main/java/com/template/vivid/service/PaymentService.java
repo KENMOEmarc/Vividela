@@ -1,7 +1,7 @@
 package com.template.vivid.service;
 
 import com.template.vivid.model.dto.PaymentDto;
-import com.template.vivid.model.dto.PaymentRequest;
+import com.template.vivid.model.payloads.requests.PaymentRequest;
 
 import java.util.List;
 

@@ -1,7 +1,7 @@
 package com.template.vivid.service;
 
-import com.template.vivid.model.dto.RegisterRequest;
-import com.template.vivid.model.dto.UserFormRequest;
+import com.template.vivid.model.payloads.requests.RegisterRequest;
+import com.template.vivid.model.payloads.requests.UserFormRequest;
 import com.template.vivid.model.dto.UserDto;
 
 import java.util.List;

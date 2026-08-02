@@ -1,6 +1,6 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
+import com.template.vivid.model.payloads.responses.ApiResponse;
 import com.template.vivid.model.dto.GeneratedPdfDto;
 import com.template.vivid.model.dto.OrderDto;
 import com.template.vivid.model.dto.TicketDto;

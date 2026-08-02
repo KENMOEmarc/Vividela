@@ -1,5 +1,7 @@
 package com.template.vivid.exception;
 
+import org.springframework.http.HttpStatus;
+
 /**
  * Ressource métier introuvable (commande, produit, article, ticket, etc.).
  * <p>
@@ -11,9 +13,14 @@ package com.template.vivid.exception;
  * - un traitement explicite côté frontend (if (status === 404) ...)
  * plutôt qu'un parsing du message d'erreur.
  */
-public class ResourceNotFoundException extends RuntimeException {
+public class ResourceNotFoundException extends BusinessException {
 
     public ResourceNotFoundException(String message) {
         super(message);
+    }
+
+    @Override
+    public HttpStatus getHttpStatus() {
+        return HttpStatus.NOT_FOUND;
     }
 }

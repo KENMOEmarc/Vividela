@@ -1,8 +1,8 @@
 package com.template.vivid.service;
 
-import com.template.vivid.model.dto.AuthResponse;
-import com.template.vivid.model.dto.LoginRequest;
-import com.template.vivid.model.dto.RegisterRequest;
+import com.template.vivid.model.payloads.responses.AuthResponse;
+import com.template.vivid.model.payloads.requests.LoginRequest;
+import com.template.vivid.model.payloads.requests.RegisterRequest;
 
 /**
  * Interface du service d'authentification.

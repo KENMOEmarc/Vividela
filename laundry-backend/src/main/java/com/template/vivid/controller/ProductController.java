@@ -1,9 +1,9 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
-import com.template.vivid.model.dto.ProductCreateRequest;
+import com.template.vivid.model.payloads.responses.ApiResponse;
+import com.template.vivid.model.payloads.requests.ProductCreateRequest;
 import com.template.vivid.model.dto.ProductDto;
-import com.template.vivid.model.dto.ProductUpdateRequest;
+import com.template.vivid.model.payloads.requests.ProductUpdateRequest;
 import com.template.vivid.model.entity.Product;
 import com.template.vivid.service.ProductService;
 import jakarta.validation.Valid;

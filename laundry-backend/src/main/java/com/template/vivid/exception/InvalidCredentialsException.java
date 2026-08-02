@@ -11,9 +11,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * le mot de passe qui est erroné (protection contre l'énumération de comptes).
  */
 @ResponseStatus(HttpStatus.UNAUTHORIZED)
-public class InvalidCredentialsException extends RuntimeException {
+public class InvalidCredentialsException extends BusinessException {
 
     public InvalidCredentialsException(String message) {
         super(message);
+    }
+
+    @Override
+    public HttpStatus getHttpStatus() {
+        return HttpStatus.UNAUTHORIZED;
     }
 }

@@ -1,6 +1,6 @@
 package com.template.vivid.exception;
 
-import com.template.vivid.model.dto.ApiResponse;
+import com.template.vivid.model.payloads.responses.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -229,6 +229,6 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Une erreur interne s'est produite. Veuillez réessayer."));
+                .body(ApiResponse.error(ex.getMessage()));
     }
 }

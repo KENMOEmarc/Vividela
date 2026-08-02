@@ -2,7 +2,7 @@ package com.template.vivid.service.impl;
 
 import com.template.vivid.exception.ResourceNotFoundException;
 import com.template.vivid.model.dto.FeedbackDto;
-import com.template.vivid.model.dto.FeedbackSubmitRequest;
+import com.template.vivid.model.payloads.requests.FeedbackSubmitRequest;
 import com.template.vivid.model.entity.Feedback;
 import com.template.vivid.model.entity.Order;
 import com.template.vivid.model.enums.OrderStatus;

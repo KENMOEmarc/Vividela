@@ -1,8 +1,8 @@
 package com.template.vivid.service;
 
-import com.template.vivid.model.dto.ArticleCreateRequest;
+import com.template.vivid.model.payloads.requests.ArticleCreateRequest;
 import com.template.vivid.model.dto.ArticleDto;
-import com.template.vivid.model.dto.ArticleUpdateRequest;
+import com.template.vivid.model.payloads.requests.ArticleUpdateRequest;
 import com.template.vivid.model.entity.Article;
 
 import java.util.List;

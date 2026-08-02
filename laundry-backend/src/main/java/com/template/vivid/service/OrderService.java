@@ -1,9 +1,9 @@
 package com.template.vivid.service;
 
-import com.template.vivid.model.dto.DepositRequest;
-import com.template.vivid.model.dto.OrderCreateRequest;
+import com.template.vivid.model.payloads.requests.DepositRequest;
+import com.template.vivid.model.payloads.requests.OrderCreateRequest;
 import com.template.vivid.model.dto.OrderDto;
-import com.template.vivid.model.dto.OrderUpdateRequest;
+import com.template.vivid.model.payloads.requests.OrderUpdateRequest;
 import com.template.vivid.model.enums.OrderStatus;
 
 import java.math.BigDecimal;

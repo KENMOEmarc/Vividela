@@ -1,8 +1,8 @@
 package com.template.vivid.service.impl;
 
-import com.template.vivid.model.dto.ProductCreateRequest;
+import com.template.vivid.model.payloads.requests.ProductCreateRequest;
 import com.template.vivid.model.dto.ProductDto;
-import com.template.vivid.model.dto.ProductUpdateRequest;
+import com.template.vivid.model.payloads.requests.ProductUpdateRequest;
 import com.template.vivid.model.entity.Product;
 import com.template.vivid.model.enums.MeasurementUnit;
 import com.template.vivid.model.mapper.ProductMapper;
@@ -17,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.template.vivid.exception.ResourceNotFoundException;
+import com.template.vivid.exception.DuplicateResourceException;
+import com.template.vivid.exception.InvalidStateTransitionException;
 
 /**
  * Service implementation for Product CRUD operations
@@ -37,7 +40,7 @@ public class ProductServiceImpl implements ProductService {
         log.debug("Creating new product: {}", request.getName());
 
         if (productRepository.findByNameIgnoreCase(request.getName()).isPresent()) {
-            throw new IllegalArgumentException("Un produit avec ce nom existe déjà: " + request.getName());
+            throw new DuplicateResourceException("Un produit avec ce nom existe déjà: " + request.getName());
         }
 
         Product product = Product.builder()
@@ -63,7 +66,7 @@ public class ProductServiceImpl implements ProductService {
         log.debug("Fetching product by ID: {}", id);
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Produit introuvable avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'ID: " + id));
 
         return ProductMapper.toDto(product);
     }
@@ -86,11 +89,11 @@ public class ProductServiceImpl implements ProductService {
         log.debug("Updating product ID: {}", id);
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Produit introuvable avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'ID: " + id));
 
         if (!product.getName().equalsIgnoreCase(request.getName())) {
             if (productRepository.findByNameIgnoreCase(request.getName()).isPresent()) {
-                throw new IllegalArgumentException("Un produit avec ce nom existe déjà: " + request.getName());
+                throw new DuplicateResourceException("Un produit avec ce nom existe déjà: " + request.getName());
             }
         }
 
@@ -109,7 +112,7 @@ public class ProductServiceImpl implements ProductService {
         log.debug("Deleting product ID: {}", id);
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Produit introuvable avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'ID: " + id));
 
         // AJOUT : empêche la suppression physique d'un produit dont le stock
         // n'est pas à zéro, ou qui possède un historique de mouvements/
@@ -118,13 +121,13 @@ public class ProductServiceImpl implements ProductService {
         // (section Stock & Produits).
         BigDecimal totalQuantity = stockRepository.sumQuantityByProductId(id);
         if (totalQuantity != null && totalQuantity.compareTo(BigDecimal.ZERO) != 0) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Impossible de supprimer le produit '" + product.getName() + "' : son stock n'est pas à "
                             + "zéro (quantité actuelle : " + totalQuantity + " sur l'ensemble des lots). Videz le "
                             + "stock (consommez tous les lots) avant de supprimer le produit.");
         }
         if (stockMovementRepository.existsByStock_Product_Id(id) || productRegistrationRepository.existsByProductId(id)) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Impossible de supprimer le produit '" + product.getName() + "' : il possède un historique de "
                             + "mouvements de stock ou d'approvisionnements. Supprimer ce produit ferait perdre "
                             + "cette traçabilité.");
@@ -138,14 +141,14 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public Product findById(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Produit introuvable avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'ID: " + id));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Product findByName(String name) {
         return productRepository.findByNameIgnoreCase(name)
-                .orElseThrow(() -> new IllegalArgumentException("Produit introuvable avec le nom: " + name));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec le nom: " + name));
     }
 
 }

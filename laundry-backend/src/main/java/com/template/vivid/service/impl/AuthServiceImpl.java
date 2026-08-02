@@ -1,9 +1,9 @@
 package com.template.vivid.service.impl;
 
 import com.template.vivid.exception.InvalidCredentialsException;
-import com.template.vivid.model.dto.AuthResponse;
-import com.template.vivid.model.dto.LoginRequest;
-import com.template.vivid.model.dto.RegisterRequest;
+import com.template.vivid.model.payloads.responses.AuthResponse;
+import com.template.vivid.model.payloads.requests.LoginRequest;
+import com.template.vivid.model.payloads.requests.RegisterRequest;
 import com.template.vivid.model.dto.UserDto;
 import com.template.vivid.model.entity.User;
 import com.template.vivid.model.mapper.UserMapper;

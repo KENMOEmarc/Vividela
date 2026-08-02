@@ -1,6 +1,9 @@
 package com.template.vivid.service;
 
 import com.template.vivid.model.dto.*;
+import com.template.vivid.model.payloads.requests.StockBatchCreateRequest;
+import com.template.vivid.model.payloads.requests.StockBatchUpdateRequest;
+import com.template.vivid.model.payloads.requests.StockConsumptionRequest;
 
 import java.util.List;
 

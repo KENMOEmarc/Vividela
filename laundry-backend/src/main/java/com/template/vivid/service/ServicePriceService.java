@@ -1,8 +1,8 @@
 package com.template.vivid.service;
 
-import com.template.vivid.model.dto.ServicePriceCreateRequest;
+import com.template.vivid.model.payloads.requests.ServicePriceCreateRequest;
 import com.template.vivid.model.dto.ServicePriceDto;
-import com.template.vivid.model.dto.ServicePriceUpdateRequest;
+import com.template.vivid.model.payloads.requests.ServicePriceUpdateRequest;
 
 import java.util.List;
 
