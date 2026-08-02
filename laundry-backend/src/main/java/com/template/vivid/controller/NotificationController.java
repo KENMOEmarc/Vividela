@@ -1,6 +1,6 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
+import com.template.vivid.model.payloads.responses.ApiResponse;
 import com.template.vivid.model.dto.NotificationDto;
 import com.template.vivid.model.entity.Notification;
 import com.template.vivid.model.entity.Order;
@@ -70,14 +70,14 @@ public class NotificationController {
         Map<Long, Order> orderById = orderIds.isEmpty()
                 ? Map.of()
                 : orderRepository.findAllById(orderIds).stream()
-                        .collect(Collectors.toMap(Order::getId, o -> o));
+                .collect(Collectors.toMap(Order::getId, o -> o));
 
         Map<Long, Integer> articleCountByOrder = orderIds.isEmpty()
                 ? Map.of()
                 : articleRepository.findByOrderIdIn(orderIds).stream()
-                        .collect(Collectors.groupingBy(
-                                a -> a.getOrder().getId(),
-                                Collectors.collectingAndThen(Collectors.counting(), Long::intValue)));
+                .collect(Collectors.groupingBy(
+                        a -> a.getOrder().getId(),
+                        Collectors.collectingAndThen(Collectors.counting(), Long::intValue)));
 
         List<NotificationDto> notifications = entities.stream()
                 .map(entity -> {

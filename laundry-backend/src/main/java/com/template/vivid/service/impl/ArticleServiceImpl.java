@@ -1,8 +1,8 @@
 package com.template.vivid.service.impl;
 
-import com.template.vivid.model.dto.ArticleCreateRequest;
+import com.template.vivid.model.payloads.requests.ArticleCreateRequest;
 import com.template.vivid.model.dto.ArticleDto;
-import com.template.vivid.model.dto.ArticleUpdateRequest;
+import com.template.vivid.model.payloads.requests.ArticleUpdateRequest;
 import com.template.vivid.model.entity.*;
 import com.template.vivid.model.enums.ServiceType;
 import com.template.vivid.model.mapper.ArticleMapper;
@@ -17,6 +17,9 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.template.vivid.exception.ResourceNotFoundException;
+import com.template.vivid.exception.InvalidRequestException;
+import com.template.vivid.exception.InvalidStateTransitionException;
 
 @Slf4j
 @Service
@@ -25,9 +28,9 @@ import java.util.stream.Collectors;
 public class ArticleServiceImpl implements com.template.vivid.service.ArticleService {
 
     private final ArticleRepository articleRepository;
-    private final OrderRepository   orderRepository;
+    private final OrderRepository orderRepository;
     private final ArticleServiceLineRepository articleServiceRepository;
-    private final ServicePriceRepository   servicePriceRepository;
+    private final ServicePriceRepository servicePriceRepository;
     private final OrderService orderService;
     private final com.template.vivid.service.NotificationService notificationService;
 
@@ -36,11 +39,11 @@ public class ArticleServiceImpl implements com.template.vivid.service.ArticleSer
         log.debug("Création d'un article pour la commande ID: {}", orderId);
 
         if (orderId == null) {
-            throw new IllegalArgumentException("Un article doit obligatoirement être rattaché à une commande.");
+            throw new InvalidRequestException("Un article doit obligatoirement être rattaché à une commande.");
         }
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Commande introuvable avec l'ID: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException("Commande introuvable avec l'ID: " + orderId));
 
         // AJOUT : porte d'entrée principale du problème "commande
         // payée/livrée modifiable" (voir revue de code, règle manquante n°1
@@ -78,7 +81,7 @@ public class ArticleServiceImpl implements com.template.vivid.service.ArticleSer
     @Override
     public ArticleDto getArticleById(Long id) {
         Article article = articleRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Article introuvable avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Article introuvable avec l'ID: " + id));
         List<ArticleServiceLine> services = articleServiceRepository.findByArticleId(id);
         return ArticleMapper.toDto(article, article.getOrder() != null ? article.getOrder().getId() : null, services);
     }
@@ -96,7 +99,7 @@ public class ArticleServiceImpl implements com.template.vivid.service.ArticleSer
     @Override
     public ArticleDto updateArticle(Long id, ArticleUpdateRequest request) {
         Article article = articleRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Article introuvable avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Article introuvable avec l'ID: " + id));
 
         if (article.getOrder() != null) {
             ensureOrderIsEditable(article.getOrder());
@@ -161,7 +164,7 @@ public class ArticleServiceImpl implements com.template.vivid.service.ArticleSer
     @Override
     public void deleteArticle(Long id) {
         Article article = articleRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Article introuvable avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Article introuvable avec l'ID: " + id));
         Long orderId = article.getOrder() != null ? article.getOrder().getId() : null;
 
         if (article.getOrder() != null) {
@@ -183,7 +186,7 @@ public class ArticleServiceImpl implements com.template.vivid.service.ArticleSer
     @Override
     public Article findEntityById(Long id) {
         return articleRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Article introuvable avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Article introuvable avec l'ID: " + id));
     }
 
     @Override
@@ -198,7 +201,7 @@ public class ArticleServiceImpl implements com.template.vivid.service.ArticleSer
      */
     private List<ArticleServiceLine> attachServices(Article article, List<ServiceType> requestedServices) {
         if (requestedServices == null || requestedServices.isEmpty()) {
-            throw new IllegalArgumentException("Sélectionnez au moins un service pour l'article.");
+            throw new InvalidRequestException("Sélectionnez au moins un service pour l'article.");
         }
 
         List<ArticleServiceLine> toCreate = requestedServices.stream()
@@ -206,7 +209,7 @@ public class ArticleServiceImpl implements com.template.vivid.service.ArticleSer
                 .map(serviceType -> {
                     ServicePrice servicePrice = servicePriceRepository
                             .findByClothingTypeAndServiceAndActiveTrue(article.getClothingType(), serviceType)
-                            .orElseThrow(() -> new IllegalArgumentException(
+                            .orElseThrow(() -> new ResourceNotFoundException(
                                     "Aucun tarif actif configuré pour le service " + serviceType
                                             + " sur le type de vêtement " + article.getClothingType()));
 
@@ -232,11 +235,11 @@ public class ArticleServiceImpl implements com.template.vivid.service.ArticleSer
         if (order.getStatus() == com.template.vivid.model.enums.OrderStatus.DELIVERED
                 || order.getStatus() == com.template.vivid.model.enums.OrderStatus.CANCELLED
                 || order.getPaymentStatus() == com.template.vivid.model.enums.PaymentStatus.COMPLETED) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Impossible de modifier les articles de la commande #" + order.getId()
                             + " : elle est " + (order.getStatus() == com.template.vivid.model.enums.OrderStatus.DELIVERED
-                                    ? "livrée" : order.getStatus() == com.template.vivid.model.enums.OrderStatus.CANCELLED
-                                    ? "annulée" : "déjà payée intégralement") + ".");
+                            ? "livrée" : order.getStatus() == com.template.vivid.model.enums.OrderStatus.CANCELLED
+                                         ? "annulée" : "déjà payée intégralement") + ".");
         }
     }
 

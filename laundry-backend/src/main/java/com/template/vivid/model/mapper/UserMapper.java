@@ -1,6 +1,6 @@
 package com.template.vivid.model.mapper;
 
-import com.template.vivid.model.dto.AuthResponse;
+import com.template.vivid.model.payloads.responses.AuthResponse;
 import com.template.vivid.model.dto.UserDto;
 import com.template.vivid.model.entity.User;
 import com.template.vivid.model.enums.RoleType;

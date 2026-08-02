@@ -1,7 +1,7 @@
 package com.template.vivid.service;
 
 import com.template.vivid.model.dto.FeedbackDto;
-import com.template.vivid.model.dto.FeedbackSubmitRequest;
+import com.template.vivid.model.payloads.requests.FeedbackSubmitRequest;
 import com.template.vivid.model.entity.Order;
 
 public interface FeedbackService {

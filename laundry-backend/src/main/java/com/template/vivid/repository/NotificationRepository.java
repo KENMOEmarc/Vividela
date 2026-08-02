@@ -25,8 +25,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             + "AND n.notificationType IN :types AND n.retryCount < :maxRetries "
             + "ORDER BY n.sentAt ASC")
     List<Notification> findFailedForRetry(@Param("types") Collection<NotificationType> types,
-                                           @Param("maxRetries") int maxRetries,
-                                           Pageable pageable);
+                                          @Param("maxRetries") int maxRetries,
+                                          Pageable pageable);
 
     /**
      * Notifications EMAIL/SMS ayant épuisé leurs tentatives de reprise
@@ -37,7 +37,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             + "AND n.notificationType IN :types AND n.retryCount >= :maxRetries "
             + "AND n.escalated = false ORDER BY n.sentAt ASC")
     List<Notification> findExhaustedNotEscalated(@Param("types") Collection<NotificationType> types,
-                                                   @Param("maxRetries") int maxRetries);
+                                                 @Param("maxRetries") int maxRetries);
 }
 
 

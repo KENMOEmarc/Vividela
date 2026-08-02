@@ -9,6 +9,7 @@ import java.util.List;
 @Repository
 public interface ProductRegistrationRepository extends JpaRepository<ProductRegistration, Long> {
     List<ProductRegistration> findByProductIdOrderByRegisteredAtDesc(Long productId);
+
     List<ProductRegistration> findAllByOrderByRegisteredAtDesc();
 
     /**

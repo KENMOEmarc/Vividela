@@ -1,8 +1,8 @@
 package com.template.vivid.service.impl;
 
-import com.template.vivid.model.dto.ServicePriceCreateRequest;
+import com.template.vivid.model.payloads.requests.ServicePriceCreateRequest;
 import com.template.vivid.model.dto.ServicePriceDto;
-import com.template.vivid.model.dto.ServicePriceUpdateRequest;
+import com.template.vivid.model.payloads.requests.ServicePriceUpdateRequest;
 import com.template.vivid.model.entity.ServicePrice;
 import com.template.vivid.model.enums.ClothingType;
 import com.template.vivid.model.enums.ServiceType;
@@ -17,6 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.template.vivid.exception.DuplicateResourceException;
+import com.template.vivid.exception.InvalidRequestException;
+import com.template.vivid.exception.InvalidStateTransitionException;
+import com.template.vivid.exception.ResourceNotFoundException;
 
 @Slf4j
 @Service
@@ -33,7 +37,7 @@ public class ServicePriceServiceImpl implements ServicePriceService {
         ServiceType serviceType = parseServiceType(request.getService());
 
         if (servicePriceRepository.findByClothingTypeAndService(clothingType, serviceType).isPresent()) {
-            throw new IllegalArgumentException(
+            throw new DuplicateResourceException(
                     "Un tarif existe déjà pour " + clothingType + " / " + serviceType);
         }
 
@@ -70,7 +74,7 @@ public class ServicePriceServiceImpl implements ServicePriceService {
         // AJOUT : le prix mis à jour doit être strictement positif. Voir
         // revue de code, règle manquante n°2 (section Tarifs des services).
         if (request.getPrice() == null || request.getPrice().compareTo(java.math.BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Le tarif doit être strictement positif.");
+            throw new InvalidRequestException("Le tarif doit être strictement positif.");
         }
 
         servicePrice.setPrice(request.getPrice());
@@ -94,7 +98,7 @@ public class ServicePriceServiceImpl implements ServicePriceService {
         // suppression silencieuse d'un tarif encore en usage historique.
         // Voir revue de code, règle manquante n°1 (section Tarifs des services).
         if (articleServiceRepository.existsByClothingTypeAndService(servicePrice.getClothingType(), servicePrice.getService())) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Impossible de supprimer ce tarif (" + servicePrice.getClothingType() + " / " + servicePrice.getService()
                             + ") : il a déjà été appliqué à au moins un article existant. Désactivez-le "
                             + "(champ 'active') plutôt que de le supprimer, afin de conserver l'historique des prix appliqués.");
@@ -106,14 +110,14 @@ public class ServicePriceServiceImpl implements ServicePriceService {
 
     private ServicePrice findEntity(Long id) {
         return servicePriceRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Tarif de service introuvable avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Tarif de service introuvable avec l'ID: " + id));
     }
 
     private ClothingType parseClothingType(String value) {
         try {
             return ClothingType.valueOf(value.trim().toUpperCase());
         } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Type de vêtement invalide: " + value);
+            throw new InvalidRequestException("Type de vêtement invalide: " + value);
         }
     }
 
@@ -121,7 +125,7 @@ public class ServicePriceServiceImpl implements ServicePriceService {
         try {
             return ServiceType.valueOf(value.trim().toUpperCase());
         } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Type de service invalide: " + value);
+            throw new InvalidRequestException("Type de service invalide: " + value);
         }
     }
 }

@@ -1,8 +1,8 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
+import com.template.vivid.model.payloads.responses.ApiResponse;
 import com.template.vivid.model.dto.PaymentDto;
-import com.template.vivid.model.dto.PaymentRequest;
+import com.template.vivid.model.payloads.requests.PaymentRequest;
 import com.template.vivid.service.PaymentService;
 import com.template.vivid.service.UserService;
 import jakarta.validation.Valid;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * REST Controller — Paiements
- *
+ * <p>
  * Endpoints pour l'enregistrement et la gestion des paiements d'une commande.
  */
 @Slf4j

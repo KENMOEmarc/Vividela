@@ -1,8 +1,8 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
+import com.template.vivid.model.payloads.responses.ApiResponse;
 import com.template.vivid.model.dto.FeedbackDto;
-import com.template.vivid.model.dto.FeedbackSubmitRequest;
+import com.template.vivid.model.payloads.requests.FeedbackSubmitRequest;
 import com.template.vivid.service.FeedbackService;
 import com.template.vivid.service.UserService;
 import jakarta.validation.Valid;
@@ -16,10 +16,10 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * Contrôleur REST du formulaire d'avis client rattaché à une commande.
- *
+ * <p>
  * URL de base : /orders/{orderId}/feedback  (le préfixe /api est ajouté par
  * context-path, voir application.yml).
- *
+ * <p>
  * Flux : une fois une commande livrée, un formulaire "vide" est généré côté
  * serveur (voir FeedbackServiceImpl#requestFeedback, déclenché depuis
  * OrderServiceImpl#updateOrder) et le client en est notifié. Ce contrôleur

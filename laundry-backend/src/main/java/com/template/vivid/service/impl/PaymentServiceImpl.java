@@ -1,8 +1,11 @@
 package com.template.vivid.service.impl;
 
 import com.template.vivid.exception.ResourceNotFoundException;
+import com.template.vivid.exception.InvalidStateTransitionException;
+import com.template.vivid.exception.InvalidRequestException;
+import com.template.vivid.exception.DuplicateResourceException;
 import com.template.vivid.model.dto.PaymentDto;
-import com.template.vivid.model.dto.PaymentRequest;
+import com.template.vivid.model.payloads.requests.PaymentRequest;
 import com.template.vivid.model.entity.Order;
 import com.template.vivid.model.entity.Payment;
 import com.template.vivid.model.enums.OrderStatus;
@@ -33,6 +36,10 @@ import java.util.stream.Collectors;
 @Transactional
 public class PaymentServiceImpl implements PaymentService {
 
+    /**
+     * Statuts de paiement considérés comme "engagés" pour le contrôle de surpaiement.
+     */
+    private static final java.util.Set<PaymentStatus> COMMITTED_STATUSES = EnumSet.of(PaymentStatus.PENDING, PaymentStatus.COMPLETED);
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
@@ -40,21 +47,18 @@ public class PaymentServiceImpl implements PaymentService {
     private final OrderService orderService;
     private final TicketService ticketService;
 
-    /** Statuts de paiement considérés comme "engagés" pour le contrôle de surpaiement. */
-    private static final java.util.Set<PaymentStatus> COMMITTED_STATUSES = EnumSet.of(PaymentStatus.PENDING, PaymentStatus.COMPLETED);
-
     @Override
     public PaymentDto recordPayment(PaymentRequest request, Long currentUserId) {
         log.debug("Enregistrement d'un paiement pour la commande: {}", request.getOrderId());
 
         Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                         "Commande introuvable avec l'ID: " + request.getOrderId()));
 
         // AJOUT : une commande annulée ne doit plus pouvoir recevoir de
         // paiement. Voir revue de code, règle manquante n°1.
         if (order.getStatus() == OrderStatus.CANCELLED) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Impossible d'enregistrer un paiement : la commande #" + order.getId() + " est annulée.");
         }
 
@@ -62,7 +66,7 @@ public class PaymentServiceImpl implements PaymentService {
         // de la validation Bean Validation @DecimalMin sur le DTO). Voir
         // revue de code, règle manquante n°5.
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Le montant du paiement doit être strictement positif.");
+            throw new InvalidRequestException("Le montant du paiement doit être strictement positif.");
         }
 
         // AJOUT : garde-fou anti-doublon — une référence de transaction déjà
@@ -72,7 +76,7 @@ public class PaymentServiceImpl implements PaymentService {
         if (request.getTransactionReference() != null && !request.getTransactionReference().isBlank()) {
             paymentRepository.findFirstByTransactionReference(request.getTransactionReference())
                     .ifPresent(existing -> {
-                        throw new IllegalStateException(
+                        throw new DuplicateResourceException(
                                 "Un paiement avec la référence de transaction '" + request.getTransactionReference()
                                         + "' a déjà été enregistré (paiement #" + existing.getId() + "). "
                                         + "Doublon refusé.");
@@ -88,7 +92,7 @@ public class PaymentServiceImpl implements PaymentService {
         BigDecimal newTotal = alreadyCommitted.add(request.getAmount());
         if (newTotal.compareTo(netAmountDue) > 0) {
             BigDecimal remaining = netAmountDue.subtract(alreadyCommitted);
-            throw new IllegalArgumentException(
+            throw new InvalidRequestException(
                     "Ce paiement de " + request.getAmount() + " dépasse le montant restant dû sur la commande #"
                             + order.getId() + " (" + (remaining.compareTo(BigDecimal.ZERO) > 0 ? remaining : BigDecimal.ZERO)
                             + " restant sur un total net de " + netAmountDue + ").");
@@ -127,7 +131,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Paiement introuvable avec l'ID: " + paymentId));
 
         if (payment.getStatus() != PaymentStatus.PENDING) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Seul un paiement PENDING peut être confirmé (statut actuel : " + payment.getStatus() + ").");
         }
 
@@ -150,7 +154,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Paiement introuvable avec l'ID: " + paymentId));
 
         if (payment.getStatus() != PaymentStatus.PENDING) {
-            throw new IllegalStateException(
+            throw new InvalidStateTransitionException(
                     "Seul un paiement PENDING peut être marqué comme échoué (statut actuel : " + payment.getStatus() + ").");
         }
 
@@ -172,8 +176,8 @@ public class PaymentServiceImpl implements PaymentService {
     /**
      * Recalcule order.paymentStatus à partir de la somme des paiements
      * COMPLETED de la commande, comparée au montant net dû :
-     *  - somme COMPLETED >= net dû → COMPLETED (soldée)
-     *  - sinon (paiement partiel ou aucun paiement confirmé) → reste PENDING
+     * - somme COMPLETED >= net dû → COMPLETED (soldée)
+     * - sinon (paiement partiel ou aucun paiement confirmé) → reste PENDING
      * Ne touche jamais un statut déjà FAILED/REFUNDED positionné manuellement
      * par le personnel (ex : remboursement effectué).
      */

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * la réponse selon notre structure ApiResponse standardisée.
  */
 @ResponseStatus(HttpStatus.CONFLICT)
-public class UserAlreadyExistsException extends RuntimeException {
+public class UserAlreadyExistsException extends DuplicateResourceException {
 
     public UserAlreadyExistsException(String message) {
         super(message);

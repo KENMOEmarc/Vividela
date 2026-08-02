@@ -12,19 +12,19 @@ import java.util.List;
 /**
  * Configuration CORS (Cross-Origin Resource Sharing).
  * PROBLÈME CORS :
- *   Le navigateur bloque par défaut les requêtes vers un domaine différent
- *   de celui de la page (politique Same-Origin). Notre frontend React tourne
- *   sur http://localhost:5173 et le backend sur http://localhost:8080 →
- *   origines différentes → CORS requis.
+ * Le navigateur bloque par défaut les requêtes vers un domaine différent
+ * de celui de la page (politique Same-Origin). Notre frontend React tourne
+ * sur http://localhost:5173 et le backend sur http://localhost:8080 →
+ * origines différentes → CORS requis.
  * SOLUTION :
- *   Le serveur inclut des en-têtes HTTP qui autorisent explicitement
- *   les requêtes cross-origin depuis les origines whitelistées.
+ * Le serveur inclut des en-têtes HTTP qui autorisent explicitement
+ * les requêtes cross-origin depuis les origines whitelistées.
  * EN-TÊTES AJOUTÉS PAR SPRING :
- *   Access-Control-Allow-Origin:  http://localhost:5173
- *   Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
- *   Access-Control-Allow-Headers: Authorization, Content-Type, ...
- *   Access-Control-Allow-Credentials: true
- *   Access-Control-Max-Age:       3600
+ * Access-Control-Allow-Origin:  http://localhost:5173
+ * Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+ * Access-Control-Allow-Headers: Authorization, Content-Type, ...
+ * Access-Control-Allow-Credentials: true
+ * Access-Control-Max-Age:       3600
  */
 @Configuration
 public class CorsConfig {
@@ -44,11 +44,11 @@ public class CorsConfig {
 
         // En-têtes autorisés dans les requêtes entrantes
         config.setAllowedHeaders(List.of(
-            "Authorization",
-            "Content-Type",
-            "Accept",
-            "X-Requested-With",
-            "Origin"
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "X-Requested-With",
+                "Origin"
         ));
 
         // Autorise l'envoi des cookies et de l'en-tête Authorization

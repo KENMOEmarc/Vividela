@@ -1,9 +1,9 @@
 package com.template.vivid.controller;
 
-import com.template.vivid.model.dto.ApiResponse;
-import com.template.vivid.model.dto.AuthResponse;
+import com.template.vivid.model.payloads.responses.ApiResponse;
+import com.template.vivid.model.payloads.responses.AuthResponse;
 import com.template.vivid.model.dto.UserDto;
-import com.template.vivid.model.dto.UserFormRequest;
+import com.template.vivid.model.payloads.requests.UserFormRequest;
 import com.template.vivid.model.entity.User;
 import com.template.vivid.model.mapper.UserMapper;
 import com.template.vivid.repository.UserRepository;
@@ -26,12 +26,12 @@ import java.util.List;
  * <p>
  * URL DE BASE : /api/users
  * RÈGLES MÉTIER (voir UserServiceImpl pour le détail) :
- *   - Un MANAGER ou un EMPLOYEE ne peut ni consulter-modifier (PATCH) un
- *     compte ADMIN, ni s'attribuer/attribuer à un tiers un rôle supérieur
- *     au sien.
- *   - Un EMPLOYEE peut uniquement consulter et modifier les utilisateurs
- *     (pas de création, pas de suppression).
- *   - Seul un ADMIN peut changer le mot de passe d'un compte existant.
+ * - Un MANAGER ou un EMPLOYEE ne peut ni consulter-modifier (PATCH) un
+ * compte ADMIN, ni s'attribuer/attribuer à un tiers un rôle supérieur
+ * au sien.
+ * - Un EMPLOYEE peut uniquement consulter et modifier les utilisateurs
+ * (pas de création, pas de suppression).
+ * - Seul un ADMIN peut changer le mot de passe d'un compte existant.
  */
 @Slf4j
 @RestController

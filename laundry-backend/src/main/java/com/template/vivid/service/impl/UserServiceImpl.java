@@ -2,8 +2,8 @@ package com.template.vivid.service.impl;
 
 import com.template.vivid.exception.PasswordMismatchException;
 import com.template.vivid.exception.UserAlreadyExistsException;
-import com.template.vivid.model.dto.RegisterRequest;
-import com.template.vivid.model.dto.UserFormRequest;
+import com.template.vivid.model.payloads.requests.RegisterRequest;
+import com.template.vivid.model.payloads.requests.UserFormRequest;
 import com.template.vivid.model.dto.UserDto;
 import com.template.vivid.model.entity.User;
 import com.template.vivid.model.enums.RoleType;
@@ -29,12 +29,15 @@ import java.util.List;
 @Transactional
 public class UserServiceImpl implements UserService {
 
+    private static final SecureRandom RANDOM = new SecureRandom();
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final NotificationService notificationService;
-    private final com.template.vivid.repository.OrderRepository orderRepository;
 
     // ── Inscription publique ───────────────────────────────────────────────
+    private final com.template.vivid.repository.OrderRepository orderRepository;
+
+    // ── Lecture ────────────────────────────────────────────────────────────
 
     @Override
     public UserDto register(RegisterRequest request) {
@@ -70,8 +73,6 @@ public class UserServiceImpl implements UserService {
         return toDto(savedUser);
     }
 
-    // ── Lecture ────────────────────────────────────────────────────────────
-
     @Override
     @Transactional(readOnly = true)
     public List<UserDto> findAll() {
@@ -83,7 +84,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserDto findByUserName(String userName) {
-        return toDto(userRepository.findByUserNameIgnoreCase(userName).orElseThrow( () -> new UsernameNotFoundException(
+        return toDto(userRepository.findByUserNameIgnoreCase(userName).orElseThrow(() -> new UsernameNotFoundException(
                 "Utilisateur non trouvé avec le nom : " + userName
         )));
     }
@@ -96,6 +97,8 @@ public class UserServiceImpl implements UserService {
                         "Utilisateur non trouvé avec l'email: " + email)));
     }
 
+    // ── CRUD Admin ─────────────────────────────────────────────────────────
+
     @Override
     @Transactional(readOnly = true)
     public UserDto findById(Long id) {
@@ -103,8 +106,6 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "Utilisateur non trouvé avec l'ID: " + id)));
     }
-
-    // ── CRUD Admin ─────────────────────────────────────────────────────────
 
     @Override
     public UserDto create(UserFormRequest request, Long currentUserId) {
@@ -281,14 +282,14 @@ public class UserServiceImpl implements UserService {
         };
     }
 
+    // ── Gestion des clients (page "Clients" du dashboard) ────────────────────
+
     @Override
     public List<UserDto> findAllCustomer() {
         return findAll().stream()
                 .filter(userDto -> userDto.getRole().equals(RoleType.CUSTOMER))
                 .toList();
     }
-
-    // ── Gestion des clients (page "Clients" du dashboard) ────────────────────
 
     @Override
     public UserDto createCustomer(UserFormRequest request, Long currentUserId) {
@@ -379,8 +380,6 @@ public class UserServiceImpl implements UserService {
         }
         return candidate;
     }
-
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     private String generateRandomPassword() {
         // 16 caractères aléatoires — jamais communiqué tel quel à l'utilisateur,

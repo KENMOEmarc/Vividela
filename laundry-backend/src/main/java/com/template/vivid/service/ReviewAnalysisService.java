@@ -25,11 +25,11 @@ public interface ReviewAnalysisService {
      * @param rating  note donnée par le client (1 à 5), peut être {@code null}
      * @param comment commentaire libre du client, peut être {@code null}/vide
      * @return une {@link CompletableFuture} qui se termine avec le sentiment
-     *         détecté et un court résumé — ne se termine jamais en exception :
-     *         en cas d'échec de l'appel au modèle (quota, réseau, clé API
-     *         absente, réponse invalide…), l'implémentation doit résoudre la
-     *         future avec un résultat de repli plutôt que de la faire échouer,
-     *         pour ne jamais bloquer le traitement de l'avis du client.
+     * détecté et un court résumé — ne se termine jamais en exception :
+     * en cas d'échec de l'appel au modèle (quota, réseau, clé API
+     * absente, réponse invalide…), l'implémentation doit résoudre la
+     * future avec un résultat de repli plutôt que de la faire échouer,
+     * pour ne jamais bloquer le traitement de l'avis du client.
      */
     CompletableFuture<ReviewAnalysisResult> analyzeAsync(Integer rating, String comment);
 

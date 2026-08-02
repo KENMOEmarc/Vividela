@@ -1,15 +1,15 @@
 package com.template.vivid.service;
 
-import com.template.vivid.model.dto.ServicePriceCreateRequest;
+import com.template.vivid.model.payloads.requests.ServicePriceCreateRequest;
 import com.template.vivid.model.dto.ServicePriceDto;
-import com.template.vivid.model.dto.ServicePriceUpdateRequest;
+import com.template.vivid.model.payloads.requests.ServicePriceUpdateRequest;
 
 import java.util.List;
 
 /**
  * Service de gestion des tarifs de service (prix par type de vêtement / type
  * de service, utilisés pour calculer automatiquement le montant des commandes).
- *
+ * <p>
  * Règles métier :
  * - ADMIN et MANAGER peuvent créer et modifier les tarifs.
  * - Seul ADMIN peut supprimer un tarif (comme toute suppression de l'application).

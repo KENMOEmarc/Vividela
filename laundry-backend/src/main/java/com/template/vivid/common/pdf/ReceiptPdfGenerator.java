@@ -41,19 +41,17 @@ public final class ReceiptPdfGenerator {
     private static final Rectangle PAGE_SIZE = PageSize.A5;
 
     // Palette de couleurs utilisée pour le PDF
-    private static final Color PRIMARY       = new Color(14, 90, 138);    // principal bleu (en-tête, bandeaux)
+    private static final Color PRIMARY = new Color(14, 90, 138);    // principal bleu (en-tête, bandeaux)
     private static final Color PRIMARY_LIGHT = new Color(234, 244, 251);  // fond bleu clair (bandeau, zébrage)
-    private static final Color BORDER_BLUE   = new Color(170, 197, 214);  // bordures des tableaux
-    private static final Color TEXT_DARK     = new Color(31, 41, 55);
-
+    private static final Color BORDER_BLUE = new Color(170, 197, 214);  // bordures des tableaux
+    private static final Color TEXT_DARK = new Color(31, 41, 55);
+    private static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm");
     @Value("${vividela.shop.name}")
     private static String shopName;
     @Value("${vividela.shop.phone}")
     private static String shopPhone;
     @Value("${vividela.shop.email}")
     private static String shopEmail;
-
-    private static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm");
 
     private ReceiptPdfGenerator() {
         // Classe utilitaire : pas d'instanciation
@@ -62,19 +60,19 @@ public final class ReceiptPdfGenerator {
     /**
      * Génère le reçu de vente au format compact.
      *
-     * @param order     la commande facturée
-     * @param articles  les vêtements de la commande
-     * @param services  les services appliqués (facturés) sur ces vêtements
-     * @param reference numéro de facture à afficher (= nom du fichier PDF)
-     * @param issuedBy  utilisateur actuellement authentifié qui a demandé la
-     *                  génération de ce reçu (affiché comme "Émis par"). Peut
-     *                  être {@code null} si l'information n'est pas disponible.
+     * @param order        la commande facturée
+     * @param articles     les vêtements de la commande
+     * @param services     les services appliqués (facturés) sur ces vêtements
+     * @param reference    numéro de facture à afficher (= nom du fichier PDF)
+     * @param issuedBy     utilisateur actuellement authentifié qui a demandé la
+     *                     génération de ce reçu (affiché comme "Émis par"). Peut
+     *                     être {@code null} si l'information n'est pas disponible.
      * @param netAmountDue montant net réellement dû (remise et points de
-     *                  fidélité utilisés déjà déduits), calculé par
-     *                  TicketServiceImpl avec la même formule que
-     *                  OrderDto.netAmountDue — garantit que l'API et ce PDF
-     *                  affichent toujours exactement le même montant. Voir
-     *                  revue de code, règle manquante n°13.
+     *                     fidélité utilisés déjà déduits), calculé par
+     *                     TicketServiceImpl avec la même formule que
+     *                     OrderDto.netAmountDue — garantit que l'API et ce PDF
+     *                     affichent toujours exactement le même montant. Voir
+     *                     revue de code, règle manquante n°13.
      */
     public static byte[] generate(Order order, List<Article> articles, List<ArticleServiceLine> services,
                                   String reference, User issuedBy, BigDecimal netAmountDue) {
@@ -86,7 +84,7 @@ public final class ReceiptPdfGenerator {
 
             renderCopy(document, order, articles, services, reference, issuedBy, netAmountDue, "EXEMPLAIRE CLIENT");
             addCutLine(document);
-            renderCopy(document, order, articles, services, reference,issuedBy, netAmountDue, "EXEMPLAIRE CAISSE");
+            renderCopy(document, order, articles, services, reference, issuedBy, netAmountDue, "EXEMPLAIRE CAISSE");
 
             document.close();
             return out.toByteArray();
@@ -95,19 +93,21 @@ public final class ReceiptPdfGenerator {
         }
     }
 
-    /** Construit un exemplaire complet du reçu (client ou caisse) dans le document courant. */
+    /**
+     * Construit un exemplaire complet du reçu (client ou caisse) dans le document courant.
+     */
     private static void renderCopy(Document document, Order order, List<Article> articles, List<ArticleServiceLine> services,
                                    String reference, User issuedBy, BigDecimal netAmountDue,
                                    String copyLabel) throws DocumentException {
 
-        Font shopFont      = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY);
-        Font contactFont   = FontFactory.getFont(FontFactory.HELVETICA, 7.5f, Color.DARK_GRAY);
-        Font labelFont     = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8.5f, TEXT_DARK);
-        Font refFont       = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9.5f, PRIMARY);
-        Font normalFont    = FontFactory.getFont(FontFactory.HELVETICA, 8.5f, TEXT_DARK);
-        Font articleFont   = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8.5f, PRIMARY);
-        Font serviceFont   = FontFactory.getFont(FontFactory.HELVETICA, 8f, TEXT_DARK);
-        Font subtotalFont  = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 7.5f, Color.DARK_GRAY);
+        Font shopFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PRIMARY);
+        Font contactFont = FontFactory.getFont(FontFactory.HELVETICA, 7.5f, Color.DARK_GRAY);
+        Font labelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8.5f, TEXT_DARK);
+        Font refFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9.5f, PRIMARY);
+        Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 8.5f, TEXT_DARK);
+        Font articleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8.5f, PRIMARY);
+        Font serviceFont = FontFactory.getFont(FontFactory.HELVETICA, 8f, TEXT_DARK);
+        Font subtotalFont = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 7.5f, Color.DARK_GRAY);
         Font statusFont;
 
         // ── En-tête établissement : bandeau bleu clair ──────────────────
@@ -194,7 +194,7 @@ public final class ReceiptPdfGenerator {
         document.add(dashedSeparator());
 
         // ── Totaux ───────────────────────────────────────────────────
-        BigDecimal total    = order.getTotalAmount() != null ? order.getTotalAmount() : computedTotal;
+        BigDecimal total = order.getTotalAmount() != null ? order.getTotalAmount() : computedTotal;
         BigDecimal discount = order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO;
         // CORRECTION : le "NET À PAYER" utilisait auparavant total-discount
         // calculé localement, ignorant les points de fidélité utilisés —
@@ -257,7 +257,9 @@ public final class ReceiptPdfGenerator {
 
     // ─── Helpers ──────────────────────────────────────────────────────────
 
-    /** Libellé complet d'un article : type de vêtement, taille et éventuelle distinction. */
+    /**
+     * Libellé complet d'un article : type de vêtement, taille et éventuelle distinction.
+     */
     private static String formatArticleLabel(Article article) {
         StringBuilder sb = new StringBuilder();
         sb.append(article.getClothingType() != null ? formatClothingType(article.getClothingType()) : "Vêtement");
@@ -316,7 +318,9 @@ public final class ReceiptPdfGenerator {
         document.add(p);
     }
 
-    /** Bandeau plein fond bleu (en-tête boutique, ou ligne "NET À PAYER" mise en évidence). */
+    /**
+     * Bandeau plein fond bleu (en-tête boutique, ou ligne "NET À PAYER" mise en évidence).
+     */
     private static void addBanner(Document document, String text, Font labelFont) throws DocumentException {
         PdfPTable t = new PdfPTable(1);
         t.setWidthPercentage(100);
@@ -330,7 +334,9 @@ public final class ReceiptPdfGenerator {
         document.add(t);
     }
 
-    /** Bandeau libellé/valeur en évidence (fond bleu plein, texte blanc) — ex. "NET À PAYER". */
+    /**
+     * Bandeau libellé/valeur en évidence (fond bleu plein, texte blanc) — ex. "NET À PAYER".
+     */
     private static void addBanner(Document document, String value) throws DocumentException {
         PdfPTable t = new PdfPTable(2);
         t.setWidthPercentage(100);
@@ -359,13 +365,17 @@ public final class ReceiptPdfGenerator {
         document.add(t);
     }
 
-    /** Pastille centrée bleue (ex. "EXEMPLAIRE CLIENT"), largeur réduite façon badge. */
+    /**
+     * Pastille centrée bleue (ex. "EXEMPLAIRE CLIENT"), largeur réduite façon badge.
+     */
     private static void addBadge(Document document, String text, float widthPercent, float before, float after) throws DocumentException {
         Font badgeFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8f, Color.WHITE);
         addColoredBadge(document, text, PRIMARY, badgeFont, widthPercent, before, after);
     }
 
-    /** Pastille centrée de couleur arbitraire (réutilisée pour le statut de paiement). */
+    /**
+     * Pastille centrée de couleur arbitraire (réutilisée pour le statut de paiement).
+     */
     private static void addColoredBadge(Document document, String text, Color bg, Font font, float widthPercent, float before, float after) throws DocumentException {
         PdfPTable t = new PdfPTable(1);
         t.setWidthPercentage(widthPercent);
@@ -381,7 +391,9 @@ public final class ReceiptPdfGenerator {
         document.add(t);
     }
 
-    /** Tableau d'informations zébré (fond bleu clair une ligne sur deux), bordures bleu clair. */
+    /**
+     * Tableau d'informations zébré (fond bleu clair une ligne sur deux), bordures bleu clair.
+     */
     private static void addInfoTable(Document document, List<String[]> rows, Font labelFont, Font valueFont) throws DocumentException {
         PdfPTable t = new PdfPTable(2);
         t.setWidthPercentage(100);
@@ -445,7 +457,9 @@ public final class ReceiptPdfGenerator {
         table.addCell(valueCell);
     }
 
-    /** Encadré de signature (bordure fine bleu clair), avec espace pour signer. */
+    /**
+     * Encadré de signature (bordure fine bleu clair), avec espace pour signer.
+     */
     private static void addSignatureCell(PdfPTable table, String label, Font font) {
         PdfPCell cell = new PdfPCell();
         cell.setBorderColor(BORDER_BLUE);
@@ -467,7 +481,9 @@ public final class ReceiptPdfGenerator {
         return separator;
     }
 
-    /** Ligne de coupe entre les deux exemplaires (client / caisse), comme sur le modèle de référence. */
+    /**
+     * Ligne de coupe entre les deux exemplaires (client / caisse), comme sur le modèle de référence.
+     */
     private static void addCutLine(Document document) throws DocumentException {
         document.add(dashedSeparator());
         Font f = FontFactory.getFont(FontFactory.HELVETICA, 7.5f, Color.GRAY);
