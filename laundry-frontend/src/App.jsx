@@ -6,11 +6,12 @@ import {
   useLocation,
 } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
-import { AuthProvider, useAuth } from "./context/AuthContext";dd
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import MainLayout from "./components/layout/MainLayout";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
 import UsersPage from "./pages/UsersPage";
 import ProductsPage from "./pages/ProductsPage";
@@ -32,7 +33,7 @@ const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
   if (!isAuthenticated) {
-    return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
+    return <Navigate to={ROUTES.HOME} state={{ from: location }} replace />;
   }
   return children;
 };
@@ -41,19 +42,12 @@ const RoleProtectedRoute = ({ children, roles }) => {
   const { isAuthenticated, hasAnyRole } = useAuth();
   const location = useLocation();
   if (!isAuthenticated) {
-    return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
+    return <Navigate to={ROUTES.HOME} state={{ from: location }} replace />;
   }
   if (roles && !hasAnyRole(roles)) {
     return <Navigate to={ROUTES.DASHBOARD} replace />;
   }
   return children;
-};
-
-const HomeRedirect = () => {
-  const { isAuthenticated } = useAuth();
-  return (
-    <Navigate to={isAuthenticated ? ROUTES.DASHBOARD : ROUTES.LOGIN} replace />
-  );
 };
 
 const App = () => {
@@ -74,7 +68,7 @@ const App = () => {
         <Routes>
           {/* Pages publiques — top navbar + footer */}
           <Route path="/" element={<MainLayout />}>
-            <Route index element={<HomeRedirect />} />
+            <Route index element={<LandingPage />} />
             <Route path={ROUTES.LOGIN.slice(1)} element={<LoginPage />} />
             <Route path={ROUTES.REGISTER.slice(1)} element={<RegisterPage />} />
           </Route>
