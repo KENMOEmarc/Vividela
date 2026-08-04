@@ -1,0 +1,25 @@
+# Java / Maven
+/target/
+*.class
+*.jar
+
+# IntelliJ
+*.iml
+.idea/
+
+# Node
+/node_modules/
+
+# Env / secrets
+.env
+*.env
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Build artifacts
+/build/
+

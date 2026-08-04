@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Simple pre-commit hook to prevent committing common unwanted files.
+for file in $(git diff --cached --name-only); do
+  case "$file" in
+    *.env|*.class|*.iml|.idea/*|node_modules/*|target/*)
+      echo "ERROR: Attempt to commit forbidden file: $file" >&2
+      echo "Remove it or add to .gitignore before committing." >&2
+      exit 1
+      ;;
+  esac
+done
+
+exit 0
+
