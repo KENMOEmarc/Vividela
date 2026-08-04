@@ -43,14 +43,6 @@ public interface TicketService {
     GeneratedPdfDto generateReceiptPdf(Long orderId, String issuerEmail);
 
     /**
-     * AJOUT : crée (de façon idempotente) et persiste la référence du reçu
-     * d'une commande dès qu'elle est intégralement payée — voir revue de
-     * code : "Aucun reçu n'est jamais réellement généré après un paiement,
-     * et le numéro de reçu n'est pas stable d'un téléchargement à l'autre".
-     * Appelée automatiquement par PaymentServiceImpl juste après qu'une
-     * commande bascule à paymentStatus=COMPLETED ; peut aussi être appelée
-     * paresseusement au premier téléchargement du reçu si, pour une raison
-     * quelconque, elle n'avait pas encore été invoquée.
      * <p>
      * Si un reçu existe déjà pour cette commande, sa référence existante est
      * simplement renvoyée (aucun doublon n'est créé).

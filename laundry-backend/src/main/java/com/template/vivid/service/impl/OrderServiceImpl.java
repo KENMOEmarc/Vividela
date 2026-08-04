@@ -59,6 +59,7 @@ public class OrderServiceImpl implements OrderService {
     private final TicketService ticketService;
     private final FeedbackRepository feedbackRepository;
     private final FeedbackService feedbackService;
+
     // CORRECTION : ArticleService dépend déjà de OrderService (pour
     // recalculateTotal/recalculateStatus) ; l'injection directe créerait un
     // cycle de dépendances au démarrage de Spring. @Lazy résout le cycle en
@@ -85,8 +86,8 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal discountAmount = request.getDiscountAmount() != null ? request.getDiscountAmount() : BigDecimal.ZERO;
         Integer loyaltyPointsUsed = request.getLoyaltyPointsUsed() != null ? request.getLoyaltyPointsUsed() : 0;
 
-        // AJOUT : cohérence des dates — la livraison prévue ne peut pas être
-        // antérieure au dépôt. Voir revue de code, règle manquante n°3.
+        // Cohérence des dates, la livraison prévue ne peut pas être
+        // antérieure au dépôt.
         validateDeliveryDate(depositDate, request.getExpectedDeliveryDate());
 
         // AJOUT : une commande démarre sans aucune prestation (totalAmount=0),
@@ -100,7 +101,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // AJOUT : les points utilisés ne peuvent pas dépasser le solde réel du
-        // client. Voir revue de code, règle manquante n°12.
+        // client.
         validateLoyaltyPointsUsed(customer, loyaltyPointsUsed);
 
         Order order = Order.builder()
@@ -275,7 +276,7 @@ public class OrderServiceImpl implements OrderService {
             processLoyaltyOnDelivery(saved);
             // AJOUT : dès la livraison, un formulaire d'avis est généré et envoyé
             // au client (voir FeedbackService) ; son avis, une fois soumis, est
-            // analysé par IA (Gemini) puis transmis au manager (et à l'admin si
+            // analysé par Gemini AI puis transmis au manager (et à l'admin si
             // jugé négatif). Voir FeedbackServiceImpl / NotificationServiceImpl.
             feedbackService.requestFeedback(saved);
         }
@@ -284,7 +285,10 @@ public class OrderServiceImpl implements OrderService {
             TransactionUtils.runAfterCommit(() -> notificationService.notifyOrderStatusChangedAsync(saved, previousStatus, saved.getStatus()));
         }
         if (saved.getPaymentStatus() != previousPaymentStatus) {
-            TransactionUtils.runAfterCommit(() -> notificationService.notifyPaymentStatusChangedAsync(saved, previousPaymentStatus, saved.getPaymentStatus()));
+            TransactionUtils.runAfterCommit(
+                    () -> notificationService.
+                            notifyPaymentStatusChangedAsync(saved, previousPaymentStatus, saved.getPaymentStatus())
+            );
         }
 
         return toDto(saved, true);
@@ -313,7 +317,9 @@ public class OrderServiceImpl implements OrderService {
         order.setUpdatedBy(userRepository.findById(currentUserId).orElse(null));
 
         Order saved = orderRepository.save(order);
-        TransactionUtils.runAfterCommit(() -> notificationService.notifyOrderStatusChangedAsync(saved, previousStatus, OrderStatus.CANCELLED));
+        TransactionUtils.runAfterCommit(
+                () -> notificationService.notifyOrderStatusChangedAsync(saved, previousStatus, OrderStatus.CANCELLED)
+        );
 
         log.info("Commande {} annulée (statut précédent : {})", id, previousStatus);
         return toDto(saved, true);
@@ -321,8 +327,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void deleteOrder(Long id) {
-        Order o = orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Commande introuvable: " + id));
+        Order o = orderRepository.findById(id).orElseThrow(
+                        () -> new ResourceNotFoundException("Commande introuvable: " + id));
 
         if (o.getPaymentStatus() == PaymentStatus.COMPLETED) {
             throw new InvalidStateTransitionException(
@@ -336,8 +342,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void recalculateTotal(Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Commande introuvable: " + orderId));
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> new ResourceNotFoundException("Commande introuvable: " + orderId));
 
         // AJOUT (défense en profondeur) : ArticleServiceImpl bloque déjà toute
         // modification d'article sur une commande livrée/annulée/payée avant
@@ -402,15 +408,16 @@ public class OrderServiceImpl implements OrderService {
             order.setUpdatedAt(Instant.now());
             Order saved = orderRepository.save(order);
 
-            TransactionUtils.runAfterCommit(() -> notificationService.notifyOrderStatusChangedAsync(saved, previousStatus, newStatus));
+            TransactionUtils.runAfterCommit(
+                    () -> notificationService.notifyOrderStatusChangedAsync(saved, previousStatus, newStatus));
         }
     }
 
     @Override
     @Transactional(readOnly = true)
     public BigDecimal getNetAmountDue(Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Commande introuvable: " + orderId));
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> new ResourceNotFoundException("Commande introuvable: " + orderId));
         return computeNetAmountDue(order);
     }
 
@@ -450,8 +457,7 @@ public class OrderServiceImpl implements OrderService {
 
         // AJOUT : les articles sont créés dans la MÊME transaction que la
         // commande — si l'un d'eux échoue, toute l'opération est annulée et
-        // aucune commande "fantôme" sans article n'est persistée. Voir revue
-        // de code, règle manquante n°17.
+        // aucune commande "fantôme" sans article n'est persistée.
         for (var articleDto : request.getArticles()) {
             ArticleCreateRequest articleRequest = ArticleCreateRequest.builder()
                     .clothingType(articleDto.getClothingType())
