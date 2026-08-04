@@ -127,15 +127,12 @@ public class ArticleServiceImpl implements com.template.vivid.service.ArticleSer
         List<ArticleServiceLine> services;
         if (request.getServices() != null) {
             // Remplace intégralement les services (et donc le prix) de l'article :
-            // on supprime d'abord toutes les anciennes relations ArticleServiceLine,
+            // on supprime d'abord toutes les anciennes relations ArticleServiceLine
             // puis on insère les nouvelles. La suppression (deleteByArticleId)
             // est désormais une requête de suppression en masse exécutée
             // IMMÉDIATEMENT en base (voir ArticleServiceLineRepository), afin que
             // les anciennes lignes aient bien disparu avant l'insertion des
-            // nouvelles — sans quoi un service conservé d'une modification à
-            // l'autre (ex : WASH gardé) violait la contrainte
-            // UNIQUE(article_id, service) et rendait toute modification des
-            // services impossible.
+            // nouvelles
             articleServiceRepository.deleteByArticleId(article.getId());
             services = attachServices(article, request.getServices());
         } else {
@@ -175,7 +172,7 @@ public class ArticleServiceImpl implements com.template.vivid.service.ArticleSer
 
         if (orderId != null) {
             orderService.recalculateTotal(orderId);
-            // AJOUT : la suppression d'un article peut faire basculer les
+            // La suppression d'un article peut faire basculer les
             // articles restants vers un statut homogène (ex : ne restent que
             // des articles COMPLETED) → on resynchronise le statut de la commande.
             orderService.recalculateStatus(orderId);
