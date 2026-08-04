@@ -36,13 +36,6 @@ public class FeedbackController {
     private final FeedbackService feedbackService;
     private final UserService userService;
 
-    /**
-     * GET /orders/{orderId}/feedback
-     * Retourne le formulaire d'avis de la commande (état "demandé" ou déjà
-     * "soumis"), ou {@code data: null} si la commande n'a pas encore été
-     * livrée (aucun formulaire généré). Accessible au client propriétaire de
-     * la commande, ou au personnel.
-     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<FeedbackDto>> getFeedback(
@@ -53,11 +46,6 @@ public class FeedbackController {
         return ResponseEntity.ok(ApiResponse.success("Formulaire d'avis récupéré", dto));
     }
 
-    /**
-     * POST /orders/{orderId}/feedback
-     * Soumission de l'avis (note 1-5 + commentaire optionnel) par le client
-     * propriétaire de la commande, une seule fois par commande livrée.
-     */
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<FeedbackDto>> submitFeedback(

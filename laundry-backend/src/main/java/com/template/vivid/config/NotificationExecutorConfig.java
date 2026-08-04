@@ -10,36 +10,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Pool de threads dédié à l'envoi asynchrone des notifications (IN_APP,
- * email) déclenchées lorsqu'une commande change de statut, ainsi qu'à
- * l'analyse IA (Gemini) et aux notifications déclenchées par les avis
- * clients (voir GeminiReviewAnalysisService et FeedbackAnalysisCoordinator).
- * <p>
- * Chaque notification est envoyée via {@code CompletableFuture.runAsync(...,
- * notificationExecutor)}. Le fait d'utiliser un pool dédié (plutôt que le
- * ForkJoinPool.commonPool() par défaut de CompletableFuture) évite qu'un pic
- * de notifications ne vienne saturer un pool partagé avec d'autres tâches
- * asynchrones de l'application, et permet de nommer/monitorer ces threads
- * indépendamment.
- * <p>
- * La requête HTTP qui déclenche le changement de statut (ex :
- * OrderServiceImpl#updateOrder / #recalculateStatus) n'attend jamais la fin
- * de l'envoi effectif de la notification pour renvoyer sa réponse : l'action
- * métier (sauvegarde de la commande) est déjà terminée et committée avant
- * que le thread de notification ne soit déclenché.
- * <p>
- * Dimensionnement : {@code CORE_POOL_SIZE = MAX_POOL_SIZE = 24} (≥ 20 threads
- * demandé). Le pool combine désormais deux familles de tâches, toutes deux
- * dominées par de l'attente réseau (I/O bound) plutôt que par du calcul CPU,
- * ce qui justifie un pool plus large que le nombre de cœurs disponibles :
- * - notifications IN_APP (écriture DB) / email / SMS,
- * - appels au modèle Gemini (analyse de sentiment d'un avis client).
- * Une file d'attente bornée ({@link LinkedBlockingQueue}) protège contre un
- * emballement mémoire en cas de pic ; au-delà, {@code CallerRunsPolicy}
- * applique une pression de retour (exécution sur le thread appelant) plutôt
- * que de perdre silencieusement des notifications.
- */
 @Configuration
 public class NotificationExecutorConfig {
 

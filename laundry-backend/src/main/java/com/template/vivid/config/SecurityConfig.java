@@ -22,11 +22,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-/**
- * Configuration centrale de Spring Security.
- * MODE STATELESS : pas de session HTTP côté serveur. Chaque requête
- * doit porter un token JWT valide (sauf les endpoints publics).
- */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity          // Active @PreAuthorize, @PostAuthorize sur les méthodes
@@ -47,11 +42,7 @@ public class SecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final CorsConfigurationSource corsConfigurationSource;
 
-    /**
-     * Chaîne de filtres de sécurité principale.
-     * <p>
-     * Ordre des règles : de la plus spécifique à la plus générale.
-     */
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -109,12 +100,6 @@ public class SecurityConfig {
                 .build();
     }
 
-    /**
-     * Fournisseur d'authentification DAO.
-     * <p>
-     * Relie UserDetailsService (chargement user depuis DB) +
-     * PasswordEncoder (comparaison BCrypt) pour l'authentification.
-     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -123,23 +108,12 @@ public class SecurityConfig {
         return provider;
     }
 
-    /**
-     * AuthenticationManager exposé comme bean.
-     * Utilisé dans AuthServiceImpl pour authentifier username/password.
-     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
             throws Exception {
         return config.getAuthenticationManager();
     }
 
-    /**
-     * Encodeur de mots de passe BCrypt.
-     * <p>
-     * BCrypt est un algorithme de hachage adaptatif conçu pour être lent
-     * et résistant aux attaques par force brute / rainbow tables.
-     * Le facteur de coût (strength=10) peut être augmenté avec le temps.
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10);
