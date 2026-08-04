@@ -28,11 +28,7 @@ import java.util.stream.Collectors;
  * - Réponses cohérentes sur toute l'API
  * - Les contrôleurs restent propres (aucun try/catch)
  * - Facile à étendre pour de nouveaux types d'exception
- * <p>
- * HIÉRARCHIE DES HANDLERS :
- * Spring choisit le handler le plus spécifique.
- * Ex: UserAlreadyExistsException → son handler dédié,
- * pas handleGeneralException().
+
  */
 @Slf4j
 @RestControllerAdvice
@@ -75,9 +71,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /**
-     * Email ou username déjà utilisé (unicité en base).
-     */
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ApiResponse<Void>> handleUserAlreadyExists(
             UserAlreadyExistsException ex) {
@@ -89,9 +82,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /**
-     * Identifiants de connexion incorrects.
-     */
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvalidCredentials(
             InvalidCredentialsException ex) {
@@ -103,9 +93,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /**
-     * Mots de passe non correspondants lors de l'inscription.
-     */
     @ExceptionHandler(PasswordMismatchException.class)
     public ResponseEntity<ApiResponse<Void>> handlePasswordMismatch(
             PasswordMismatchException ex) {
@@ -115,9 +102,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /**
-     * Utilisateur non trouvé en base.
-     */
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleUserNotFound(
             UsernameNotFoundException ex) {
@@ -127,10 +111,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /**
-     * Accès refusé : l'utilisateur est authentifié mais n'a pas les droits
-     * nécessaires pour cette ressource (géré par @PreAuthorize).
-     */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(
             AccessDeniedException ex) {
@@ -142,16 +122,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Accès refusé : permissions insuffisantes"));
     }
 
-    /**
-     * Données invalides fournies par un service (entité introuvable, règle métier, etc.).
-     * <p>
-     * BUGFIX : IllegalArgumentException était levée dans plusieurs services
-     * (StockServiceImpl, ProductServiceImpl, OrderServiceImpl…) mais n'était pas
-     * interceptée ici — elle tombait dans le handler générique handleGeneralException()
-     * et retournait un 500, au lieu d'un 400 ou 404 métier approprié.
-     * Certains contrôleurs compensaient avec des try/catch locaux ; désormais ce
-     * handler centralise toutes ces erreurs et évite la duplication.
-     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
         log.info("Requête invalide: {}", ex.getMessage());
@@ -160,12 +130,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /**
-     * Ressource métier introuvable (commande, produit, article, ticket...).
-     * Voir revue de code — "Distinction 400 vs 404 pour les ressources introuvables".
-     * Nouveaux appels de service : préférer lever cette exception plutôt
-     * qu'une IllegalArgumentException lorsque la cause est "introuvable".
-     */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(ResourceNotFoundException ex) {
         log.info("Ressource introuvable: {}", ex.getMessage());
@@ -174,15 +138,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /**
-     * Violation de contrainte d'intégrité en base (ex. collision sur une
-     * colonne UNIQUE comme barcode/ticket_number, clé étrangère, etc.).
-     * <p>
-     * Avant ce handler dédié, ces erreurs tombaient dans le fallback générique
-     * (500 Internal Server Error) sans message exploitable pour l'utilisateur.
-     * On renvoie désormais un 409 Conflict avec un message générique invitant
-     * à réessayer (on n'expose jamais le détail SQL brut au client).
-     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         log.warn("Violation de contrainte d'intégrité en base: {}", ex.getMessage());
@@ -194,7 +149,6 @@ public class GlobalExceptionHandler {
 
     /**
      * Règle métier violée (ex. suppression d'une commande déjà payée).
-     * Voir revue de code — "deleteOrder sans garde-fou métier".
      */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalState(IllegalStateException ex) {

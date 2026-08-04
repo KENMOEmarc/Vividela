@@ -35,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Slf4j
@@ -43,14 +44,6 @@ import java.util.List;
 @Transactional
 public class TicketServiceImpl implements TicketService {
 
-    /**
-     * Nombre de tentatives en cas de collision sur la colonne UNIQUE `barcode`.
-     * Voir revue de code — "Pas de gestion de collision sur barcode/ticket_number".
-     * La colonne `barcode` est UNIQUE en base mais generateBarcode() ne
-     * vérifie jamais l'unicité au préalable ; en cas de collision (même
-     * commande + même milliseconde tronquée), on retente avec un nouveau
-     * tirage plutôt que de laisser remonter un 500 générique au client.
-     */
     private static final int MAX_BARCODE_GENERATION_ATTEMPTS = 5;
     private final TicketRepository ticketRepository;
     private final ReceiptRepository receiptRepository;
@@ -81,7 +74,7 @@ public class TicketServiceImpl implements TicketService {
 
         Ticket ticket = getOrCreateTicket(orderId);
         // AJOUT : vérifie l'expiration avant de (re)générer le PDF, et marque
-        // le ticket comme consulté. Voir revue de code, règle manquante n°16.
+        // le ticket comme consulté.
         ticket = checkExpiryAndMarkDownloaded(ticket);
         log.info("Génération du PDF du ticket pour la commande {}", orderId);
         byte[] pdf = TicketPdfGenerator.generate(order, articles, ticket);
@@ -135,31 +128,17 @@ public class TicketServiceImpl implements TicketService {
             }
         }
 
-        // CORRECTION : la référence du reçu était auparavant re-tirée
-        // aléatoirement à chaque appel (DocumentReferenceGenerator.generateReceiptReference),
-        // ce qui produisait un numéro de facture différent à chaque
-        // téléchargement du même reçu. On réutilise désormais systématiquement
-        // la référence stable persistée pour cette commande (créée
-        // automatiquement dès le passage à paymentStatus=COMPLETED, ou ici en
-        // secours si elle n'existait pas encore). Voir revue de code, règle
-        // manquante : "Aucun reçu n'est jamais réellement généré après un paiement".
         String reference = ensureReceiptForOrder(order, issuerEmail);
         log.info("Génération du PDF du reçu {} pour la commande {}", reference, orderId);
         // AJOUT : le "NET À PAYER" du PDF utilise désormais exactement le
         // même calcul (remise + points de fidélité déduits) que
-        // OrderDto.netAmountDue exposé par l'API — les deux vues de la
-        // commande ne peuvent plus diverger. Voir revue de code, règle
-        // manquante n°13.
-        java.math.BigDecimal netAmountDue = computeNetAmountDue(order);
+        // OrderDto.netAmountDue exposé par l'API
+        BigDecimal netAmountDue = computeNetAmountDue(order);
         byte[] pdf = ReceiptPdfGenerator.generate(order, articles, allServices, reference, UserMapper.toUser(issuer), netAmountDue);
         return new GeneratedPdfDto(pdf, reference);
     }
 
-    /**
-     * AJOUT : voir TicketService#ensureReceiptForOrder. Idempotent — si un
-     * reçu existe déjà pour cette commande, sa référence est simplement
-     * renvoyée telle quelle (jamais de doublon, jamais de nouveau tirage).
-     */
+
     @Override
     public String ensureReceiptForOrder(Order order, String issuerEmail) {
         return receiptRepository.findByOrderId(order.getId())
@@ -238,10 +217,7 @@ public class TicketServiceImpl implements TicketService {
                         .barcode(generateBarcode(order))
                         .status(TicketStatus.GENERATED)
                         .issuedAt(now)
-                        // AJOUT : date d'expiration calculée à l'émission (voir
-                        // revue de code, règle manquante n°16 — un ticket ne
-                        // pouvait jamais expirer).
-                        .expiresAt(now.plus(ticketExpirationDays, java.time.temporal.ChronoUnit.DAYS))
+                        .expiresAt(now.plus(ticketExpirationDays, ChronoUnit.DAYS))
                         .build();
                 return ticketRepository.save(ticket);
             } catch (DataIntegrityViolationException e) {
@@ -289,14 +265,6 @@ public class TicketServiceImpl implements TicketService {
                 });
     }
 
-    /**
-     * AJOUT : vérifie paresseusement l'expiration d'un ticket à chaque accès
-     * (voir revue de code, règle manquante n°16). Un ticket jamais réclamé
-     * (toujours GENERATED) dont la date d'expiration est dépassée bascule en
-     * EXPIRED et ne peut plus être téléchargé sans intervention du
-     * personnel. Un ticket encore valide et accédé pour la première fois
-     * bascule en DOWNLOADED.
-     */
     private Ticket checkExpiryAndMarkDownloaded(Ticket ticket) {
         Instant now = Instant.now();
 

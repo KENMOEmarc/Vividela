@@ -52,11 +52,6 @@ public class ProductServiceImpl implements ProductService {
         Product savedProduct = productRepository.save(product);
         log.info("Product created successfully with ID: {}", savedProduct.getId());
 
-        // NOTE : le stock agrégé est désormais calculé à la volée à partir des
-        // lots (Stock) du produit, il n'est donc plus nécessaire de créer une
-        // ligne de stock "placeholder" à quantité 0 : un produit sans lot
-        // apparaît naturellement avec une quantité totale de 0 dans la page Stock.
-
         return savedProduct;
     }
 
@@ -114,11 +109,6 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'ID: " + id));
 
-        // AJOUT : empêche la suppression physique d'un produit dont le stock
-        // n'est pas à zéro, ou qui possède un historique de mouvements/
-        // approvisionnements — même garde-fou que deleteOrder() pour
-        // préserver la traçabilité. Voir revue de code, règle manquante n°1
-        // (section Stock & Produits).
         BigDecimal totalQuantity = stockRepository.sumQuantityByProductId(id);
         if (totalQuantity != null && totalQuantity.compareTo(BigDecimal.ZERO) != 0) {
             throw new InvalidStateTransitionException(

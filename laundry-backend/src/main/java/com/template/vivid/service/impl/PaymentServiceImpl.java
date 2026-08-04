@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -39,7 +40,7 @@ public class PaymentServiceImpl implements PaymentService {
     /**
      * Statuts de paiement considérés comme "engagés" pour le contrôle de surpaiement.
      */
-    private static final java.util.Set<PaymentStatus> COMMITTED_STATUSES = EnumSet.of(PaymentStatus.PENDING, PaymentStatus.COMPLETED);
+    private static final Set<PaymentStatus> COMMITTED_STATUSES = EnumSet.of(PaymentStatus.PENDING, PaymentStatus.COMPLETED);
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
@@ -56,23 +57,21 @@ public class PaymentServiceImpl implements PaymentService {
                         "Commande introuvable avec l'ID: " + request.getOrderId()));
 
         // AJOUT : une commande annulée ne doit plus pouvoir recevoir de
-        // paiement. Voir revue de code, règle manquante n°1.
+        // paiement.
         if (order.getStatus() == OrderStatus.CANCELLED) {
             throw new InvalidStateTransitionException(
                     "Impossible d'enregistrer un paiement : la commande #" + order.getId() + " est annulée.");
         }
 
         // AJOUT : montant strictement positif (défense en profondeur, en plus
-        // de la validation Bean Validation @DecimalMin sur le DTO). Voir
-        // revue de code, règle manquante n°5.
+        // de la validation Bean Validation @DecimalMin sur le DTO).
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidRequestException("Le montant du paiement doit être strictement positif.");
         }
 
         // AJOUT : garde-fou anti-doublon — une référence de transaction déjà
         // enregistrée (ex : double clic, webhook rejoué) est refusée plutôt
-        // que d'être insérée une seconde fois. Voir revue de code, règle
-        // manquante n°6.
+        // que d'être insérée une seconde fois.
         if (request.getTransactionReference() != null && !request.getTransactionReference().isBlank()) {
             paymentRepository.findFirstByTransactionReference(request.getTransactionReference())
                     .ifPresent(existing -> {
@@ -85,8 +84,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         // AJOUT : contrôle de surpaiement — la somme des paiements déjà
         // engagés (PENDING + COMPLETED) plus ce nouveau paiement ne doit pas
-        // dépasser le montant net dû de la commande. Voir revue de code,
-        // règle manquante n°2.
+        // dépasser le montant net dû de la commande.
         BigDecimal netAmountDue = orderService.getNetAmountDue(order.getId());
         BigDecimal alreadyCommitted = paymentRepository.sumAmountByOrderIdAndStatusIn(order.getId(), COMMITTED_STATUSES);
         BigDecimal newTotal = alreadyCommitted.add(request.getAmount());
@@ -117,14 +115,6 @@ public class PaymentServiceImpl implements PaymentService {
         return PaymentMapper.toDto(saved);
     }
 
-    /**
-     * AJOUT : confirme un paiement PENDING (encaissement effectif) et
-     * réconcilie order.paymentStatus. C'est le SEUL endroit qui peut
-     * désormais faire basculer une commande à paymentStatus=COMPLETED (voir
-     * revue de code, règles manquantes n°3 et n°4 — jusqu'ici le champ
-     * Payment.status restait indéfiniment PENDING et order.paymentStatus
-     * n'était jamais rapproché des paiements réels).
-     */
     @Override
     public PaymentDto confirmPayment(Long paymentId, Long currentUserId) {
         Payment payment = paymentRepository.findById(paymentId)
@@ -146,7 +136,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     /**
      * AJOUT : marque un paiement PENDING comme FAILED (ex : chèque rejeté).
-     * Voir revue de code, règle manquante n°4.
      */
     @Override
     public PaymentDto failPayment(Long paymentId, Long currentUserId) {
@@ -207,22 +196,7 @@ public class PaymentServiceImpl implements PaymentService {
                             + "(payé: {}, net dû: {})",
                     orderId, previous, newStatus, completedTotal, netAmountDue);
 
-            // AJOUT : dès que la commande est intégralement payée, on génère
-            // (et persiste) immédiatement la référence de son reçu — voir
-            // revue de code, règle manquante : "Aucun reçu n'est jamais
-            // réellement généré après un paiement". Le PDF lui-même reste
-            // rendu à la volée au téléchargement (voir
-            // TicketServiceImpl#generateReceiptPdf), mais son numéro de
-            // facture est désormais fixé dès cet instant et ne varie plus
-            // d'un téléchargement à l'autre. Best-effort : un échec ici ne
-            // doit jamais faire échouer la réconciliation du paiement.
             if (newStatus == PaymentStatus.COMPLETED) {
-                // BUGFIX : l'appel à ensureReceiptForOrder() partageait la même
-                // transaction que confirmPayment(). Si la génération du reçu
-                // échouait, la transaction était marquée comme rollback-only,
-                // causant le rollback silencieux de la confirmation de paiement.
-                // On délègue maintenant cette opération à un post-commit pour
-                // l'exécuter APRÈS la validation du paiement.
                 TransactionUtils.runAfterCommit(() -> {
                     try {
                         String reference = ticketService.ensureReceiptForOrder(saved, null);
