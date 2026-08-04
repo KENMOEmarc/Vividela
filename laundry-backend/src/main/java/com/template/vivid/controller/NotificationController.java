@@ -34,24 +34,6 @@ public class NotificationController {
     private final ArticleRepository articleRepository;
     private final UserService userService;
 
-    /**
-     * GET /notifications — récupère les notifications de l'utilisateur connecté
-     * (les plus récentes en premier). C'est ce flux qui alimente la page
-     * "Notifications" du site client (canal IN_APP).
-     * <p>
-     * BUGFIX : on ne renvoie plus l'entité {@code Notification} brute mais un
-     * {@link NotificationDto}. L'entité embarquait, via ses associations
-     * paresseuses {@code user}/{@code order} (chargées automatiquement tant
-     * que spring.jpa.open-in-view est actif), le mot de passe haché du
-     * client concerné ainsi que celui du client/créateur de la commande liée
-     * — exposés en clair dans le JSON de réponse à chaque appel.
-     * <p>
-     * Chaque notification est enrichie avec quelques détails de la commande
-     * liée (date de dépôt, nombre d'articles) afin que le frontend puisse
-     * afficher un lien direct vers la commande sans appel supplémentaire.
-     * Ces détails sont chargés en 2 requêtes groupées (une par commande
-     * concernée, pas une par notification) pour éviter tout N+1.
-     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<List<NotificationDto>>> getUserNotifications(
@@ -97,16 +79,6 @@ public class NotificationController {
                 ApiResponse.success("Notifications récupérées", notifications));
     }
 
-    /**
-     * PATCH /notifications/{notificationId}/read — marquer une notification comme lue
-     * <p>
-     * BUGFIX : aucune vérification de propriété n'était faite auparavant —
-     * n'importe quel utilisateur authentifié pouvait marquer comme lue (et
-     * donc altérer) la notification de n'importe quel autre utilisateur en
-     * devinant/énumérant son ID (IDOR). On vérifie désormais que la
-     * notification appartient bien à l'appelant, sauf pour ADMIN/EMPLOYEE
-     * qui gèrent aussi les alertes internes (stock bas, etc.).
-     */
     @PatchMapping("/{notificationId}/read")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<Void>> markAsRead(
@@ -134,9 +106,6 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success("Notification marquée comme lue", null));
     }
 
-    /**
-     * Résout l'ID de l'utilisateur connecté depuis le contexte de sécurité.
-     */
     private Long resolveUserId(UserDetails userDetails) {
         if (userDetails == null) {
             return null;

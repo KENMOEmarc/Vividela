@@ -43,19 +43,6 @@ public class AuthController {
 
     private final AuthService authService;
 
-    /**
-     * POST /api/auth/register
-     * <p>
-     * Inscrit un nouvel utilisateur et retourne un token JWT.
-     *
-     * @return 201 Created + token JWT si succès
-     * @Valid déclenche la validation du DTO :
-     * - Champs obligatoires (@NotBlank)
-     * - Format email (@Email)
-     * - Taille (@Size)
-     * - Regex (@Pattern)
-     * En cas d'erreur → GlobalExceptionHandler intercepte et retourne 400.
-     */
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(
             @Valid @RequestBody RegisterRequest request) {
@@ -72,14 +59,6 @@ public class AuthController {
                 ));
     }
 
-    /**
-     * POST /api/auth/login
-     * <p>
-     * Authentifie un utilisateur existant.
-     *
-     * @return 200 OK + token JWT si succès
-     * 401 Unauthorized si identifiants invalides (géré par GlobalExceptionHandler)
-     */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest request) {
@@ -93,17 +72,6 @@ public class AuthController {
         );
     }
 
-    /**
-     * POST /api/auth/logout
-     * <p>
-     * Révoque le token JWT courant en l'ajoutant à la blacklist Redis.
-     * Requiert un token valide dans le header Authorization.
-     * <p>
-     * Le token est extrait de l'en-tête Authorization: Bearer <token>
-     * et transmis à AuthService.logout() pour révocation.
-     *
-     * @return 200 OK si token révoqué ou absent (idempotent)
-     */
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {

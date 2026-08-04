@@ -29,9 +29,6 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final UserService userService;
 
-    /**
-     * POST /payments — enregistre un paiement pour une commande
-     */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PaymentDto>> recordPayment(
@@ -45,10 +42,6 @@ public class PaymentController {
                 .body(ApiResponse.success("Paiement enregistré avec succès", created));
     }
 
-    /**
-     * AJOUT : PATCH /payments/{id}/confirm — confirme l'encaissement effectif
-     * d'un paiement PENDING. Voir revue de code, règles manquantes n°3 et n°4.
-     */
     @PatchMapping("/{id}/confirm")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PaymentDto>> confirmPayment(
@@ -60,10 +53,6 @@ public class PaymentController {
                 ApiResponse.success("Paiement confirmé avec succès", paymentService.confirmPayment(id, currentUserId)));
     }
 
-    /**
-     * AJOUT : PATCH /payments/{id}/fail — marque un paiement PENDING comme échoué.
-     * Voir revue de code, règle manquante n°4.
-     */
     @PatchMapping("/{id}/fail")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PaymentDto>> failPayment(
@@ -75,9 +64,6 @@ public class PaymentController {
                 ApiResponse.success("Paiement marqué comme échoué", paymentService.failPayment(id, currentUserId)));
     }
 
-    /**
-     * GET /payments/order/{orderId} — liste les paiements d'une commande.
-     */
     @GetMapping("/order/{orderId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<java.util.List<PaymentDto>>> getPaymentsByOrder(@PathVariable Long orderId) {
@@ -85,9 +71,6 @@ public class PaymentController {
                 ApiResponse.success("Paiements de la commande récupérés", paymentService.getPaymentsByOrder(orderId)));
     }
 
-    /**
-     * Résout l'ID de l'utilisateur connecté depuis le contexte de sécurité.
-     */
     private Long resolveUserId(UserDetails userDetails) {
         if (userDetails == null) return null;
         return userService.findByEmail(userDetails.getUsername()).getId();

@@ -50,11 +50,6 @@ public class CustomerOrderController {
     private final OrderService orderService;
     private final UserService userService;
 
-    /**
-     * GET /customers/{customerId}/orders
-     * Retourne toutes les commandes d'un client donné.
-     * Accessible au personnel, ou au client lui-même pour ses propres commandes.
-     */
     @GetMapping("/{customerId}/orders")
     public ResponseEntity<ApiResponse<List<OrderDto>>> getOrdersByCustomer(
             @PathVariable Long customerId,
@@ -67,11 +62,6 @@ public class CustomerOrderController {
                         orderService.getOrdersByClient(customerId)));
     }
 
-    /**
-     * GET /customers/{customerId}/stats
-     * Statistiques d'un client : nombre de commandes + montant total dépensé.
-     * Accessible au personnel, ou au client lui-même pour ses propres statistiques.
-     */
     @GetMapping("/{customerId}/stats")
     public ResponseEntity<ApiResponse<CustomerStatsDto>> getCustomerStats(
             @PathVariable Long customerId,
@@ -92,10 +82,6 @@ public class CustomerOrderController {
         return ResponseEntity.ok(ApiResponse.success("Statistiques du client récupérées", stats));
     }
 
-    /**
-     * GET /customers/{id}
-     * Récupère un client (User de rôle CUSTOMER) par son ID.
-     */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<UserDto>> getCustomerById(@PathVariable Long id) {
@@ -103,10 +89,6 @@ public class CustomerOrderController {
         return ResponseEntity.ok(ApiResponse.success("Client récupéré", user));
     }
 
-    /**
-     * POST /customers
-     * Crée un nouveau client depuis le dashboard admin.
-     */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<UserDto>> createCustomer(
@@ -119,10 +101,6 @@ public class CustomerOrderController {
                 .body(ApiResponse.success("Client créé avec succès", created));
     }
 
-    /**
-     * PUT /customers/{id}
-     * Met à jour les informations d'un client existant.
-     */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<UserDto>> updateCustomer(
@@ -133,10 +111,6 @@ public class CustomerOrderController {
         return ResponseEntity.ok(ApiResponse.success("Client mis à jour avec succès", updated));
     }
 
-    /**
-     * DELETE /customers/{id}
-     * Supprime un client.
-     */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteCustomer(
@@ -146,12 +120,6 @@ public class CustomerOrderController {
         userService.delete(id, currentUserId);
         return ResponseEntity.ok(ApiResponse.success("Client supprimé avec succès", null));
     }
-
-    /**
-     * Vérifie que l'appelant est un membre du personnel (ADMIN/EMPLOYEE)
-     * ou le client lui-même (customerId == son propre ID).
-     * Lève AccessDeniedException sinon (→ 403, géré par GlobalExceptionHandler).
-     */
     private void ensureStaffOrSelf(Long customerId, UserDetails userDetails) {
         boolean isStaff = userDetails.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")

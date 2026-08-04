@@ -36,10 +36,6 @@ public class TicketController {
     private final OrderService orderService;
     private final UserService userService;
 
-    /**
-     * Vérifie que l'appelant est membre du personnel, ou le client propriétaire
-     * de la commande consultée. Lève AccessDeniedException (→ 403) sinon.
-     */
     private void ensureStaffOrOwner(Long orderId, UserDetails userDetails) {
         boolean isStaff = userDetails.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_EMPLOYEE"));
@@ -53,9 +49,6 @@ public class TicketController {
         }
     }
 
-    /**
-     * POST /orders/{orderId}/ticket — crée (ou renvoie s'il existe déjà) le ticket de la commande.
-     */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<TicketDto>> generateTicket(@PathVariable Long orderId) {
@@ -64,9 +57,6 @@ public class TicketController {
                 .body(ApiResponse.success("Ticket généré avec succès", ticket));
     }
 
-    /**
-     * GET /orders/{orderId}/ticket — informations du ticket existant.
-     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<TicketDto>> getTicket(
@@ -76,12 +66,6 @@ public class TicketController {
                 ApiResponse.success("Ticket récupéré", ticketService.getTicketByOrderId(orderId)));
     }
 
-    /**
-     * GET /orders/{orderId}/ticket/pdf — génère et télécharge le ticket au format PDF.
-     */
-    // No 'produces' declared here to avoid 406 Not Acceptable when the client
-    // sends an Accept header that doesn't include 'application/pdf'.
-    // The method sets the Content-Type header explicitly on the response.
     @GetMapping(value = "/pdf")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<byte[]> downloadTicketPdf(
@@ -105,12 +89,6 @@ public class TicketController {
                 .body(doc.getContent());
     }
 
-    /**
-     * GET /orders/{orderId}/ticket/receipt — génère et télécharge le reçu de la commande au format PDF.
-     * <p>
-     * Comme pour le ticket, le reçu ne peut être généré qu'une fois la commande créée
-     * ET au moins un vêtement (article) enregistré dessus.
-     */
     @GetMapping(value = "/receipt")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE', 'CUSTOMER')")
     public ResponseEntity<byte[]> downloadReceiptPdf(
