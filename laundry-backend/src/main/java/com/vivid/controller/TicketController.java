@@ -47,8 +47,8 @@ public class TicketController {
             return;
         }
         OrderDto order = orderService.getOrderById(orderId, false);
-        Long currentUserId = userService.findByEmail(userDetails.getUsername()).getId();
-        if (order.getClientUserId() == null || !order.getClientUserId().equals(currentUserId)) {
+        Long currentUserId = userService.findByEmail(userDetails.getUsername()).id();
+        if (order.clientUserId() == null || !order.clientUserId().equals(currentUserId)) {
             throw new AccessDeniedException("Accès refusé : vous ne pouvez consulter que vos propres tickets");
         }
     }
@@ -102,7 +102,7 @@ public class TicketController {
 
         return ResponseEntity.ok()
                 .headers(headers)
-                .body(doc.getContent());
+                .body(doc.content());
     }
 
     /**
@@ -128,6 +128,6 @@ public class TicketController {
 
         return ResponseEntity.ok()
                 .headers(headers)
-                .body(doc.getContent());
+                .body(doc.content());
     }
 }

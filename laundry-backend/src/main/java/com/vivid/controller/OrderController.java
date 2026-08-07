@@ -227,7 +227,7 @@ public class OrderController {
             return;
         }
         Long currentUserId = resolveUserId(userDetails);
-        if (order.getClientUserId() == null || !order.getClientUserId().equals(currentUserId)) {
+        if (order.clientUserId() == null || !order.clientUserId().equals(currentUserId)) {
             throw new org.springframework.security.access.AccessDeniedException(
                     "Accès refusé : vous ne pouvez consulter que vos propres commandes");
         }
@@ -308,6 +308,6 @@ public class OrderController {
         if (userDetails == null) {
             return null;
         }
-        return userService.findByEmail(userDetails.getUsername()).getId();
+        return userService.findByEmail(userDetails.getUsername()).id();
     }
 }

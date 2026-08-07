@@ -90,6 +90,6 @@ public class PaymentController {
      */
     private Long resolveUserId(UserDetails userDetails) {
         if (userDetails == null) return null;
-        return userService.findByEmail(userDetails.getUsername()).getId();
+        return userService.findByEmail(userDetails.getUsername()).id();
     }
 }

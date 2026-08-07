@@ -2,11 +2,8 @@ package com.vivid.model.dto;
 
 import com.vivid.model.enums.NotificationType;
 import com.vivid.model.enums.RequestStatus;
-import lombok.AllArgsConstructor;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -22,25 +19,26 @@ import java.time.LocalDate;
  * que ceux de {@code order.clientUser}, {@code order.createdBy} et
  * {@code order.updatedBy}. Ce DTO ne contient que ce dont le frontend a
  * réellement besoin.
+ * <p>
+ * NOTE : record immuable — {@code toBuilder()} (généré par {@code @Builder})
+ * permet de produire une copie enrichie (ex. avec les détails de commande)
+ * plutôt que de muter l'instance, comme le faisait l'ancien DTO à setters.
  */
-@Getter
-@Setter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class NotificationDto {
-    private Long id;
-    private Long orderId;
-    private String subject;
-    private String message;
-    private NotificationType notificationType;
-    private RequestStatus status;
-    private Boolean isRead;
-    private Instant sentAt;
+@Builder(toBuilder = true)
+public record NotificationDto(
+        Long id,
+        Long orderId,
+        String subject,
+        String message,
+        NotificationType notificationType,
+        RequestStatus status,
+        Boolean isRead,
+        Instant sentAt,
 
-    // Détails de la commande liée, pour affichage direct dans la liste de
-    // notifications sans appel supplémentaire côté frontend (numéro de
-    // commande = orderId ci-dessus).
-    private LocalDate orderDepositDate;
-    private Integer orderArticleCount;
+        // Détails de la commande liée, pour affichage direct dans la liste de
+        // notifications sans appel supplémentaire côté frontend (numéro de
+        // commande = orderId ci-dessus).
+        LocalDate orderDepositDate,
+        Integer orderArticleCount
+) {
 }

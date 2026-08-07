@@ -11,23 +11,24 @@ import java.util.List;
  * (StockBatchDto). Le détail des lots peut être inclus via {@code batches}
  * lorsque l'on consulte le stock d'un produit précis.
  */
-@Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
-public class StockDto {
-    private Long productId;
-    private String productName;
-    private String measurementUnit;
+@Builder
+public record StockDto(
+        Long productId,
+        String productName,
+        String measurementUnit,
 
-    /** Quantité totale, tous lots confondus. */
-    private BigDecimal currentQuantity;
-    private BigDecimal thresholdValue;
-    private boolean belowThreshold;
+        /** Quantité totale, tous lots confondus. */
+        BigDecimal currentQuantity,
+        BigDecimal thresholdValue,
+        boolean belowThreshold,
 
-    /** Nombre de lots actifs pour ce produit. */
-    private int batchCount;
+        /** Nombre de lots actifs pour ce produit. */
+        int batchCount,
 
-    /** Date d'expiration la plus proche parmi les lots restants (peut être null). */
-    private LocalDate nearestExpirationDate;
+        /** Date d'expiration la plus proche parmi les lots restants (peut être null). */
+        LocalDate nearestExpirationDate,
 
-    /** Détail des lots (rempli uniquement pour la vue "produit précis"). */
-    private List<StockBatchDto> batches;
+        /** Détail des lots (rempli uniquement pour la vue "produit précis"). */
+        List<StockBatchDto> batches
+) {
 }

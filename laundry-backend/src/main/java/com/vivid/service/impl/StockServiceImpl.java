@@ -85,7 +85,7 @@ public class StockServiceImpl implements StockService {
         return productRepository.findAll().stream()
                 .map(product -> StockMapper.toAggregatedDto(
                         product, stockRepository.findByProductId(product.getId()), false))
-                .filter(StockDto::isBelowThreshold)
+                .filter(StockDto::belowThreshold)
                 .collect(Collectors.toList());
     }
 

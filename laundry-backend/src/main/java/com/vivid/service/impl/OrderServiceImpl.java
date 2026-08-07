@@ -463,16 +463,16 @@ public class OrderServiceImpl implements OrderService {
         // aucune commande "fantôme" sans article n'est persistée.
         for (var articleDto : request.getArticles()) {
             ArticleCreateRequest articleRequest = ArticleCreateRequest.builder()
-                    .clothingType(articleDto.getClothingType())
-                    .size(articleDto.getSize())
-                    .fabric(articleDto.getFabric())
-                    .color(articleDto.getColor())
-                    .distinction(articleDto.getDistinction())
-                    .status(articleDto.getStatus() != null ? articleDto.getStatus()
+                    .clothingType(articleDto.clothingType())
+                    .size(articleDto.size())
+                    .fabric(articleDto.fabric())
+                    .color(articleDto.color())
+                    .distinction(articleDto.distinction())
+                    .status(articleDto.status() != null ? articleDto.status()
                             : ArticleStatus.PENDING)
-                    .services(articleDto.getServices() != null
-                            ? articleDto.getServices().stream()
-                            .map(ArticleServiceDto::getService)
+                    .services(articleDto.services() != null
+                            ? articleDto.services().stream()
+                            .map(ArticleServiceDto::service)
                             .collect(Collectors.toList())
                             : List.of())
                     .build();
@@ -585,11 +585,11 @@ public class OrderServiceImpl implements OrderService {
         String ticketNumber = ticketRepository.findByOrderId(order.getId())
                 .map(Ticket::getBarcode)
                 .orElse(null);
-        OrderDto dto = OrderMapper.toDto(order, articles, includeArticles, servicesByArticle, ticketNumber);
-        dto.setNetAmountDue(computeNetAmountDue(order));
-        feedbackRepository.findByOrderId(order.getId())
-                .ifPresent(feedback -> dto.setFeedbackStatus(feedbackStatusLabel(feedback)));
-        return dto;
+        BigDecimal netAmountDue = computeNetAmountDue(order);
+        String feedbackStatus = feedbackRepository.findByOrderId(order.getId())
+                .map(this::feedbackStatusLabel)
+                .orElse(null);
+        return OrderMapper.toDto(order, articles, includeArticles, servicesByArticle, ticketNumber, netAmountDue, feedbackStatus);
     }
 
     private List<OrderDto> toDtoList(List<Order> orders, boolean includeArticles) {
@@ -620,6 +620,10 @@ public class OrderServiceImpl implements OrderService {
         Map<Long, String> feedbackStatusByOrder = feedbackRepository.findByOrderIdIn(orderIds).stream()
                 .collect(Collectors.toMap(f -> f.getOrder().getId(), this::feedbackStatusLabel, (a, b) -> a));
 
+        // Calculer les montants nets pour tous les ordres
+        Map<Long, BigDecimal> netAmountsByOrder = orders.stream()
+                .collect(Collectors.toMap(Order::getId, this::computeNetAmountDue));
+
         return orders.stream()
                 .map(order -> {
                     List<Article> articles = articlesByOrder.getOrDefault(order.getId(), Collections.emptyList());
@@ -629,10 +633,9 @@ public class OrderServiceImpl implements OrderService {
                             a -> servicesByArticle.getOrDefault(a.getId(), Collections.emptyList())))
                             : Map.of();
                     String ticketNumber = ticketNumberByOrder.get(order.getId());
-                    OrderDto dto = OrderMapper.toDto(order, articles, includeArticles, servicesForThisOrder, ticketNumber);
-                    dto.setNetAmountDue(computeNetAmountDue(order));
-                    dto.setFeedbackStatus(feedbackStatusByOrder.get(order.getId()));
-                    return dto;
+                    BigDecimal netAmountDue = netAmountsByOrder.get(order.getId());
+                    String feedbackStatus = feedbackStatusByOrder.get(order.getId());
+                    return OrderMapper.toDto(order, articles, includeArticles, (Map<Long, List<ArticleServiceLine>>) servicesForThisOrder, ticketNumber, netAmountDue, feedbackStatus);
                 })
                 .collect(Collectors.toList());
     }

@@ -11,7 +11,6 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
         </processorPath>
         <module name="vividela-backend" />
-        <module name="laundry-backend" />
       </profile>
     </annotationProcessing>
   </component>

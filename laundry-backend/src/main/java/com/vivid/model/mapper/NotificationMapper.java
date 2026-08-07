@@ -1,6 +1,7 @@
 package com.vivid.model.mapper;
 
 import com.vivid.model.dto.NotificationDto;
+import com.vivid.model.dto.NotificationDto;
 import com.vivid.model.entity.Notification;
 
 /**

@@ -82,12 +82,12 @@ public class NotificationController {
         List<NotificationDto> notifications = entities.stream()
                 .map(entity -> {
                     NotificationDto dto = NotificationMapper.toDto(entity);
-                    if (dto.getOrderId() != null) {
-                        Order order = orderById.get(dto.getOrderId());
+                    if (dto.orderId() != null) {
+                        Order order = orderById.get(dto.orderId());
                         if (order != null) {
-                            dto.setOrderDepositDate(order.getDepositDate());
+                            dto.toBuilder().orderDepositDate(order.getDepositDate());
                         }
-                        dto.setOrderArticleCount(articleCountByOrder.getOrDefault(dto.getOrderId(), 0));
+                        dto.toBuilder().orderArticleCount(articleCountByOrder.getOrDefault(dto.orderId(), 0));
                     }
                     return dto;
                 })
@@ -141,6 +141,6 @@ public class NotificationController {
         if (userDetails == null) {
             return null;
         }
-        return userService.findByEmail(userDetails.getUsername()).getId();
+        return userService.findByEmail(userDetails.getUsername()).id();
     }
 }
