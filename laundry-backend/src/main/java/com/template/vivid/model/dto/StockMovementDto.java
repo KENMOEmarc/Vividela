@@ -4,16 +4,17 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
-public class StockMovementDto {
-    private Long id;
-    private Long stockId;
-    private Long productId;
-    private String productName;
-    private BigDecimal quantity;
-    private String movementType;
-    private String notes;
-    private Instant movementDate;
-    private Long userId;
-    private String userName;
+@Builder
+public record StockMovementDto(
+        Long id,
+        Long stockId,
+        Long productId,
+        String productName,
+        BigDecimal quantity,
+        String movementType,
+        String notes,
+        Instant movementDate,
+        Long userId,
+        String userName
+) {
 }

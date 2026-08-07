@@ -81,7 +81,7 @@ public class CustomerOrderController {
 
         List<OrderDto> orders = orderService.getOrdersByClient(customerId);
         BigDecimal totalSpent = orders.stream()
-                .map(o -> o.getTotalAmount() != null ? o.getTotalAmount() : BigDecimal.ZERO)
+                .map(o -> o.totalAmount() != null ? o.totalAmount() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         CustomerStatsDto stats = CustomerStatsDto.builder()
@@ -113,7 +113,7 @@ public class CustomerOrderController {
             @Valid @RequestBody UserFormRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long currentUserId = userService.findByEmail(userDetails.getUsername()).getId();
+        Long currentUserId = userService.findByEmail(userDetails.getUsername()).id();
         UserDto created = userService.createCustomer(request, currentUserId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Client créé avec succès", created));
@@ -142,7 +142,7 @@ public class CustomerOrderController {
     public ResponseEntity<ApiResponse<Void>> deleteCustomer(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
-        Long currentUserId = userService.findByEmail(userDetails.getUsername()).getId();
+        Long currentUserId = userService.findByEmail(userDetails.getUsername()).id();
         userService.delete(id, currentUserId);
         return ResponseEntity.ok(ApiResponse.success("Client supprimé avec succès", null));
     }
@@ -161,7 +161,7 @@ public class CustomerOrderController {
             return;
         }
         UserDto current = userService.findByEmail(userDetails.getUsername());
-        if (!current.getId().equals(customerId)) {
+        if (!current.id().equals(customerId)) {
             throw new AccessDeniedException("Accès refusé : vous ne pouvez consulter que vos propres données");
         }
     }

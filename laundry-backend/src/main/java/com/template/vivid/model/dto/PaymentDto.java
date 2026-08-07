@@ -1,25 +1,22 @@
-package com.template.vivid.model.dto;
+package com.vivid.model.dto;
 
-import com.template.vivid.model.enums.PaymentMethodType;
-import com.template.vivid.model.enums.PaymentStatus;
-import lombok.*;
+import com.vivid.model.enums.PaymentMethodType;
+import com.vivid.model.enums.PaymentStatus;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Getter
-@Setter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class PaymentDto {
-    private Long id;
-    private Long orderId;
-    private PaymentMethodType paymentMethod;
-    private BigDecimal amount;
-    private String payerPhone;
-    private String transactionReference;
-    private PaymentStatus status;
-    private Instant paidAt;
-    private Long createdBy;
+public record PaymentDto(
+        Long id,
+        Long orderId,
+        PaymentMethodType paymentMethod,
+        BigDecimal amount,
+        String payerPhone,
+        String transactionReference,
+        PaymentStatus status,
+        Instant paidAt,
+        Long createdBy
+) {
 }

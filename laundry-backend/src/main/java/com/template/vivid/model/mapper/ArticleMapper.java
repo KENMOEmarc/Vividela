@@ -50,7 +50,7 @@ public final class ArticleMapper {
                 .collect(Collectors.toList());
 
         BigDecimal totalPrice = serviceDtos.stream()
-                .map(ArticleServiceDto::getAppliedPrice)
+                .map(ArticleServiceDto::appliedPrice)
                 .filter(java.util.Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

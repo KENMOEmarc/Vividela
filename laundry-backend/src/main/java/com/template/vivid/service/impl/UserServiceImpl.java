@@ -287,7 +287,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserDto> findAllCustomer() {
         return findAll().stream()
-                .filter(userDto -> userDto.getRole().equals(RoleType.CUSTOMER))
+                .filter(userDto -> userDto.role().equals(RoleType.CUSTOMER))
                 .toList();
     }
 

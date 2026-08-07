@@ -1,33 +1,36 @@
-package com.template.vivid.service.impl;
+package com.vivid.service.impl;
 
-import com.template.vivid.exception.ResourceNotFoundException;
-import com.template.vivid.exception.InvalidRequestException;
-import com.template.vivid.exception.InvalidStateTransitionException;
-import com.template.vivid.model.payloads.requests.ArticleCreateRequest;
-import com.template.vivid.model.payloads.requests.DepositRequest;
-import com.template.vivid.model.payloads.requests.OrderCreateRequest;
-import com.template.vivid.model.dto.OrderDto;
-import com.template.vivid.model.payloads.requests.OrderUpdateRequest;
-import com.template.vivid.model.entity.Article;
-import com.template.vivid.model.entity.ArticleServiceLine;
-import com.template.vivid.model.entity.Feedback;
-import com.template.vivid.model.entity.Order;
-import com.template.vivid.model.entity.Ticket;
-import com.template.vivid.model.entity.User;
-import com.template.vivid.model.enums.OrderStatus;
-import com.template.vivid.model.enums.PaymentStatus;
-import com.template.vivid.model.mapper.OrderMapper;
-import com.template.vivid.repository.ArticleRepository;
-import com.template.vivid.repository.ArticleServiceLineRepository;
-import com.template.vivid.repository.FeedbackRepository;
-import com.template.vivid.repository.OrderRepository;
-import com.template.vivid.repository.TicketRepository;
-import com.template.vivid.repository.UserRepository;
-import com.template.vivid.service.FeedbackService;
-import com.template.vivid.service.OrderService;
-import com.template.vivid.service.NotificationService;
-import com.template.vivid.service.TicketService;
-import com.template.vivid.common.TransactionUtils;
+import com.vivid.exception.ResourceNotFoundException;
+import com.vivid.exception.InvalidRequestException;
+import com.vivid.exception.InvalidStateTransitionException;
+import com.vivid.model.dto.ArticleServiceDto;
+import com.vivid.model.enums.ArticleStatus;
+import com.vivid.model.payloads.requests.ArticleCreateRequest;
+import com.vivid.model.payloads.requests.DepositRequest;
+import com.vivid.model.payloads.requests.OrderCreateRequest;
+import com.vivid.model.dto.OrderDto;
+import com.vivid.model.payloads.requests.OrderUpdateRequest;
+import com.vivid.model.entity.Article;
+import com.vivid.model.entity.ArticleServiceLine;
+import com.vivid.model.entity.Feedback;
+import com.vivid.model.entity.Order;
+import com.vivid.model.entity.Ticket;
+import com.vivid.model.entity.User;
+import com.vivid.model.enums.OrderStatus;
+import com.vivid.model.enums.PaymentStatus;
+import com.vivid.model.mapper.OrderMapper;
+import com.vivid.repository.ArticleRepository;
+import com.vivid.repository.ArticleServiceLineRepository;
+import com.vivid.repository.FeedbackRepository;
+import com.vivid.repository.OrderRepository;
+import com.vivid.repository.TicketRepository;
+import com.vivid.repository.UserRepository;
+import com.vivid.service.FeedbackService;
+import com.vivid.service.OrderService;
+import com.vivid.service.ArticleService;
+import com.vivid.service.NotificationService;
+import com.vivid.service.TicketService;
+import com.vivid.common.TransactionUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -59,13 +62,14 @@ public class OrderServiceImpl implements OrderService {
     private final TicketService ticketService;
     private final FeedbackRepository feedbackRepository;
     private final FeedbackService feedbackService;
+
     // CORRECTION : ArticleService dépend déjà de OrderService (pour
     // recalculateTotal/recalculateStatus) ; l'injection directe créerait un
     // cycle de dépendances au démarrage de Spring. @Lazy résout le cycle en
     // injectant un proxy dont l'initialisation réelle est différée au
     // premier appel (voir createDeposit(), seul point d'utilisation).
     @Lazy
-    private final com.template.vivid.service.ArticleService articleService;
+    private final ArticleService articleService;
     @Value("${vividela.loyalty.point-value}")
     private BigDecimal loyaltyPointValue;
     @Value("${vividela.loyalty.points-per-cfa}")
@@ -85,8 +89,8 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal discountAmount = request.getDiscountAmount() != null ? request.getDiscountAmount() : BigDecimal.ZERO;
         Integer loyaltyPointsUsed = request.getLoyaltyPointsUsed() != null ? request.getLoyaltyPointsUsed() : 0;
 
-        // AJOUT : cohérence des dates — la livraison prévue ne peut pas être
-        // antérieure au dépôt. Voir revue de code, règle manquante n°3.
+        // Cohérence des dates, la livraison prévue ne peut pas être
+        // antérieure au dépôt.
         validateDeliveryDate(depositDate, request.getExpectedDeliveryDate());
 
         // AJOUT : une commande démarre sans aucune prestation (totalAmount=0),
@@ -100,7 +104,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // AJOUT : les points utilisés ne peuvent pas dépasser le solde réel du
-        // client. Voir revue de code, règle manquante n°12.
+        // client.
         validateLoyaltyPointsUsed(customer, loyaltyPointsUsed);
 
         Order order = Order.builder()
@@ -275,7 +279,7 @@ public class OrderServiceImpl implements OrderService {
             processLoyaltyOnDelivery(saved);
             // AJOUT : dès la livraison, un formulaire d'avis est généré et envoyé
             // au client (voir FeedbackService) ; son avis, une fois soumis, est
-            // analysé par IA (Gemini) puis transmis au manager (et à l'admin si
+            // analysé par Gemini AI puis transmis au manager (et à l'admin si
             // jugé négatif). Voir FeedbackServiceImpl / NotificationServiceImpl.
             feedbackService.requestFeedback(saved);
         }
@@ -284,7 +288,10 @@ public class OrderServiceImpl implements OrderService {
             TransactionUtils.runAfterCommit(() -> notificationService.notifyOrderStatusChangedAsync(saved, previousStatus, saved.getStatus()));
         }
         if (saved.getPaymentStatus() != previousPaymentStatus) {
-            TransactionUtils.runAfterCommit(() -> notificationService.notifyPaymentStatusChangedAsync(saved, previousPaymentStatus, saved.getPaymentStatus()));
+            TransactionUtils.runAfterCommit(
+                    () -> notificationService.
+                            notifyPaymentStatusChangedAsync(saved, previousPaymentStatus, saved.getPaymentStatus())
+            );
         }
 
         return toDto(saved, true);
@@ -313,7 +320,9 @@ public class OrderServiceImpl implements OrderService {
         order.setUpdatedBy(userRepository.findById(currentUserId).orElse(null));
 
         Order saved = orderRepository.save(order);
-        TransactionUtils.runAfterCommit(() -> notificationService.notifyOrderStatusChangedAsync(saved, previousStatus, OrderStatus.CANCELLED));
+        TransactionUtils.runAfterCommit(
+                () -> notificationService.notifyOrderStatusChangedAsync(saved, previousStatus, OrderStatus.CANCELLED)
+        );
 
         log.info("Commande {} annulée (statut précédent : {})", id, previousStatus);
         return toDto(saved, true);
@@ -321,8 +330,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void deleteOrder(Long id) {
-        Order o = orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Commande introuvable: " + id));
+        Order o = orderRepository.findById(id).orElseThrow(
+                        () -> new ResourceNotFoundException("Commande introuvable: " + id));
 
         if (o.getPaymentStatus() == PaymentStatus.COMPLETED) {
             throw new InvalidStateTransitionException(
@@ -336,8 +345,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void recalculateTotal(Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Commande introuvable: " + orderId));
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> new ResourceNotFoundException("Commande introuvable: " + orderId));
 
         // AJOUT (défense en profondeur) : ArticleServiceImpl bloque déjà toute
         // modification d'article sur une commande livrée/annulée/payée avant
@@ -381,9 +390,9 @@ public class OrderServiceImpl implements OrderService {
         }
 
         boolean allPending = articles.stream()
-                .allMatch(a -> a.getStatus() == com.template.vivid.model.enums.ArticleStatus.PENDING);
+                .allMatch(a -> a.getStatus() == ArticleStatus.PENDING);
         boolean allCompleted = articles.stream()
-                .allMatch(a -> a.getStatus() == com.template.vivid.model.enums.ArticleStatus.COMPLETED);
+                .allMatch(a -> a.getStatus() == ArticleStatus.COMPLETED);
 
         OrderStatus newStatus;
         if (allCompleted) {
@@ -402,15 +411,16 @@ public class OrderServiceImpl implements OrderService {
             order.setUpdatedAt(Instant.now());
             Order saved = orderRepository.save(order);
 
-            TransactionUtils.runAfterCommit(() -> notificationService.notifyOrderStatusChangedAsync(saved, previousStatus, newStatus));
+            TransactionUtils.runAfterCommit(
+                    () -> notificationService.notifyOrderStatusChangedAsync(saved, previousStatus, newStatus));
         }
     }
 
     @Override
     @Transactional(readOnly = true)
     public BigDecimal getNetAmountDue(Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Commande introuvable: " + orderId));
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> new ResourceNotFoundException("Commande introuvable: " + orderId));
         return computeNetAmountDue(order);
     }
 
@@ -450,20 +460,19 @@ public class OrderServiceImpl implements OrderService {
 
         // AJOUT : les articles sont créés dans la MÊME transaction que la
         // commande — si l'un d'eux échoue, toute l'opération est annulée et
-        // aucune commande "fantôme" sans article n'est persistée. Voir revue
-        // de code, règle manquante n°17.
+        // aucune commande "fantôme" sans article n'est persistée.
         for (var articleDto : request.getArticles()) {
             ArticleCreateRequest articleRequest = ArticleCreateRequest.builder()
-                    .clothingType(articleDto.getClothingType())
-                    .size(articleDto.getSize())
-                    .fabric(articleDto.getFabric())
-                    .color(articleDto.getColor())
-                    .distinction(articleDto.getDistinction())
-                    .status(articleDto.getStatus() != null ? articleDto.getStatus()
-                            : com.template.vivid.model.enums.ArticleStatus.PENDING)
-                    .services(articleDto.getServices() != null
-                            ? articleDto.getServices().stream()
-                            .map(com.template.vivid.model.dto.ArticleServiceDto::getService)
+                    .clothingType(articleDto.clothingType())
+                    .size(articleDto.size())
+                    .fabric(articleDto.fabric())
+                    .color(articleDto.color())
+                    .distinction(articleDto.distinction())
+                    .status(articleDto.status() != null ? articleDto.status()
+                            : ArticleStatus.PENDING)
+                    .services(articleDto.services() != null
+                            ? articleDto.services().stream()
+                            .map(ArticleServiceDto::service)
                             .collect(Collectors.toList())
                             : List.of())
                     .build();
@@ -576,11 +585,11 @@ public class OrderServiceImpl implements OrderService {
         String ticketNumber = ticketRepository.findByOrderId(order.getId())
                 .map(Ticket::getBarcode)
                 .orElse(null);
-        OrderDto dto = OrderMapper.toDto(order, articles, includeArticles, servicesByArticle, ticketNumber);
-        dto.setNetAmountDue(computeNetAmountDue(order));
-        feedbackRepository.findByOrderId(order.getId())
-                .ifPresent(feedback -> dto.setFeedbackStatus(feedbackStatusLabel(feedback)));
-        return dto;
+        BigDecimal netAmountDue = computeNetAmountDue(order);
+        String feedbackStatus = feedbackRepository.findByOrderId(order.getId())
+                .map(this::feedbackStatusLabel)
+                .orElse(null);
+        return OrderMapper.toDto(order, articles, includeArticles, servicesByArticle, ticketNumber, netAmountDue, feedbackStatus);
     }
 
     private List<OrderDto> toDtoList(List<Order> orders, boolean includeArticles) {
@@ -611,6 +620,10 @@ public class OrderServiceImpl implements OrderService {
         Map<Long, String> feedbackStatusByOrder = feedbackRepository.findByOrderIdIn(orderIds).stream()
                 .collect(Collectors.toMap(f -> f.getOrder().getId(), this::feedbackStatusLabel, (a, b) -> a));
 
+        // Calculer les montants nets pour tous les ordres
+        Map<Long, BigDecimal> netAmountsByOrder = orders.stream()
+                .collect(Collectors.toMap(Order::getId, this::computeNetAmountDue));
+
         return orders.stream()
                 .map(order -> {
                     List<Article> articles = articlesByOrder.getOrDefault(order.getId(), Collections.emptyList());
@@ -620,10 +633,9 @@ public class OrderServiceImpl implements OrderService {
                             a -> servicesByArticle.getOrDefault(a.getId(), Collections.emptyList())))
                             : Map.of();
                     String ticketNumber = ticketNumberByOrder.get(order.getId());
-                    OrderDto dto = OrderMapper.toDto(order, articles, includeArticles, servicesForThisOrder, ticketNumber);
-                    dto.setNetAmountDue(computeNetAmountDue(order));
-                    dto.setFeedbackStatus(feedbackStatusByOrder.get(order.getId()));
-                    return dto;
+                    BigDecimal netAmountDue = netAmountsByOrder.get(order.getId());
+                    String feedbackStatus = feedbackStatusByOrder.get(order.getId());
+                    return OrderMapper.toDto(order, articles, includeArticles, (Map<Long, List<ArticleServiceLine>>) servicesForThisOrder, ticketNumber, netAmountDue, feedbackStatus);
                 })
                 .collect(Collectors.toList());
     }

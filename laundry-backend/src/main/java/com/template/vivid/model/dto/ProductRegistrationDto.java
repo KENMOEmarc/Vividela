@@ -1,18 +1,21 @@
-package com.template.vivid.model.dto;
+package com.vivid.model.dto;
 
-import lombok.*;
+import lombok.Builder;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
-public class ProductRegistrationDto {
-    private Long id;
-    private Long productId;
-    private String productName;
-    private Long employeeUserId;
-    private String employeeName;
-    private BigDecimal quantity;
-    private String registrationType;
-    private String notes;
-    private Instant registeredAt;
+@Builder
+public record ProductRegistrationDto(
+        Long id,
+        Long productId,
+        String productName,
+        Long employeeUserId,
+        String employeeName,
+        BigDecimal quantity,
+        String registrationType,
+        String notes,
+        Instant registeredAt
+) {
+
 }

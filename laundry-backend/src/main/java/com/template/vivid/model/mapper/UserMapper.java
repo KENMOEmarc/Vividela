@@ -52,15 +52,15 @@ public final class UserMapper {
             return null;
         }
         return User.builder()
-                .id(issuer.getId())
-                .userName(issuer.getUserName())
-                .email(issuer.getEmail())
-                .phone(issuer.getPhone())
-                .firstName(issuer.getFirstName())
-                .lastName(issuer.getLastName())
-                .role(issuer.getRole() != null ? issuer.getRole() : null)
-                .createdAt(issuer.getCreatedAt())
-                .updatedAt(issuer.getUpdatedAt())
+                .id(issuer.id())
+                .userName(issuer.userName())
+                .email(issuer.email())
+                .phone(issuer.phone())
+                .firstName(issuer.firstName())
+                .lastName(issuer.lastName())
+                .role(issuer.role() != null ? issuer.role() : null)
+                .createdAt(issuer.createdAt())
+                .updatedAt(issuer.updatedAt())
                 .build();
     }
 }

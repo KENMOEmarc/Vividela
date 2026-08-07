@@ -59,12 +59,12 @@ public class AuthServiceImpl implements AuthService {
 
         // Génère le JWT pour la connexion automatique post-inscription
         String token = jwtTokenProvider.generateToken(
-                user.getId(),
-                user.getUserName(),
-                user.getEmail()
+                user.id(),
+                user.userName(),
+                user.email()
         );
 
-        log.info("Inscription réussie et token généré pour: {}", user.getEmail());
+        log.info("Inscription réussie et token généré pour: {}", user.email());
 
         return buildAuthResponse(token, user);
     }

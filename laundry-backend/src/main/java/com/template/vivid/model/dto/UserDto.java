@@ -17,21 +17,18 @@ import java.time.Instant;
  * id, identifiants, nom, statut, horodatages.
  * Le mot de passe n'est JAMAIS inclus dans cette réponse.
  */
-@Getter
-@Setter
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserDto {
-    private Long          id;
-    private String        userName;
-    private String        email;
-    private String        phone;
-    private String        firstName;
-    private String        lastName;
-    private RoleType role;
-    private boolean       enabled;
-    private Instant createdAt;
-    private Instant updatedAt;
+public record UserDto(
+        Long id,
+        String userName,
+        String email,
+        String phone,
+        String firstName,
+        String lastName,
+        RoleType role,
+        boolean enabled,
+        Instant createdAt,
+        Instant updatedAt
+) {
 }

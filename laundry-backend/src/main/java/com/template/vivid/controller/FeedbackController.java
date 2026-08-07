@@ -71,7 +71,7 @@ public class FeedbackController {
     }
 
     private Long resolveUserId(UserDetails userDetails) {
-        return userService.findByEmail(userDetails.getUsername()).getId();
+        return userService.findByEmail(userDetails.getUsername()).id();
     }
 
     private boolean isStaff(UserDetails userDetails) {

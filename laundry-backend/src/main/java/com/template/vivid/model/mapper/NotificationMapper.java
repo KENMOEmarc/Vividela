@@ -1,7 +1,8 @@
-package com.template.vivid.model.mapper;
+package com.vivid.model.mapper;
 
-import com.template.vivid.model.dto.NotificationDto;
-import com.template.vivid.model.entity.Notification;
+import com.vivid.model.dto.NotificationDto;
+import com.vivid.model.dto.NotificationDto;
+import com.vivid.model.entity.Notification;
 
 /**
  * Mapper centralisant la conversion Notification (entity) → NotificationDto.

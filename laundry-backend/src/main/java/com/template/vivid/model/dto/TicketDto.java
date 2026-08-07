@@ -9,15 +9,12 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class TicketDto {
-    private Long id;
-    private String barcode;
-    private TicketStatus status;
-    private LocalDateTime issuedAt;
-}
 
+@Builder
+public record TicketDto(
+        Long id,
+        String barcode,
+        TicketStatus status,
+        LocalDateTime issuedAt
+) {
+}

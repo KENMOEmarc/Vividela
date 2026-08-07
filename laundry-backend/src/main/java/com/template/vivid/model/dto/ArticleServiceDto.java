@@ -1,7 +1,7 @@
-package com.template.vivid.model.dto;
+package com.vivid.model.dto;
 
-import com.template.vivid.model.enums.ServiceType;
-import lombok.*;
+import com.vivid.model.enums.ServiceType;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 
@@ -9,12 +9,10 @@ import java.math.BigDecimal;
  * Représente un service appliqué à un article, avec le prix tarifé
  * au moment de l'ajout (issu de ServicePrice).
  */
-@Getter
-@Setter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ArticleServiceDto {
-    private ServiceType service;
-    private BigDecimal appliedPrice;
+public record ArticleServiceDto(
+        ServiceType service,
+        BigDecimal appliedPrice
+) {
+
 }
