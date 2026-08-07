@@ -2,6 +2,18 @@
 
 Template complet d'authentification avec **Spring Boot** (backend) et **React.js** (frontend).
 
+![Spring Boot 3.2.5](https://img.shields.io/badge/Spring%20Boot%203.2.5-6DB33F?style=flat-square&logo=springboot&logoColor=white)
+![React 18.3](https://img.shields.io/badge/React%2018.3-61DAFB?style=flat-square&logo=react&logoColor=black)
+![MySQL 8+](https://img.shields.io/badge/MySQL%208%2B-4479A1?style=flat-square&logo=mysql&logoColor=white)
+![Redis 7+](https://img.shields.io/badge/Redis%207%2B-DC382D?style=flat-square&logo=redis&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
+![Tailwind CSS 3.x](https://img.shields.io/badge/Tailwind%20CSS%203.x-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white)
+![Vite 5.x](https://img.shields.io/badge/Vite%205.x-646CFF?style=flat-square&logo=vite&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring%20Security-6DB33F?style=flat-square&logo=springsecurity&logoColor=white)
+![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-6DB33F?style=flat-square&logo=spring&logoColor=white)
+![React Router v6](https://img.shields.io/badge/React%20Router%20v6-CA4245?style=flat-square&logo=reactrouter&logoColor=white)
+![Axios 1.7](https://img.shields.io/badge/Axios%201.7-5A29E4?style=flat-square&logo=axios&logoColor=white)
+
 ## Stack technique
 
 | Couche | Technologie | Version | Rôle |
